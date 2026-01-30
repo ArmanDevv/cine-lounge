@@ -3,7 +3,23 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Index from "./pages/Index";
+import { MainLayout } from "./components/layout/MainLayout";
+
+// Pages
+import HomePage from "./pages/HomePage";
+import LoginPage from "./pages/LoginPage";
+import RegisterPage from "./pages/RegisterPage";
+import BrowsePage from "./pages/BrowsePage";
+import MovieDetailsPage from "./pages/MovieDetailsPage";
+import PlayerPage from "./pages/PlayerPage";
+import ProfilePage from "./pages/ProfilePage";
+import GroupsPage from "./pages/GroupsPage";
+import GroupDetailPage from "./pages/GroupDetailPage";
+import WatchPartyPage from "./pages/WatchPartyPage";
+import PlaylistsPage from "./pages/PlaylistsPage";
+import AdminDashboard from "./pages/AdminDashboard";
+import AdminMoviesPage from "./pages/AdminMoviesPage";
+import AdminUsersPage from "./pages/AdminUsersPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -15,8 +31,29 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Index />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          {/* Auth Pages - No Layout */}
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+          
+          {/* Player - Full Screen */}
+          <Route path="/player/:id" element={<PlayerPage />} />
+          
+          {/* Main App with Layout */}
+          <Route element={<MainLayout />}>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/movies" element={<BrowsePage />} />
+            <Route path="/movies/:id" element={<MovieDetailsPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/playlists" element={<PlaylistsPage />} />
+            <Route path="/groups" element={<GroupsPage />} />
+            <Route path="/groups/:id" element={<GroupDetailPage />} />
+            <Route path="/watch-party" element={<WatchPartyPage />} />
+            <Route path="/watch-party/:groupId" element={<WatchPartyPage />} />
+            <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/admin/movies" element={<AdminMoviesPage />} />
+            <Route path="/admin/users" element={<AdminUsersPage />} />
+          </Route>
+          
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
