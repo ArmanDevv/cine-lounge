@@ -47,7 +47,7 @@ export function Sidebar({ className }: SidebarProps) {
       initial={{ x: -100, opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
       className={cn(
-        'fixed left-0 top-0 h-screen pt-16 z-30 bg-sidebar border-r border-sidebar-border transition-all duration-300',
+        'fixed left-0 top-0 h-screen pt-16 z-30 bg-sidebar border-r border-sidebar-border transition-all duration-300 hidden md:block',
         isCollapsed ? 'w-16' : 'w-56',
         className
       )}

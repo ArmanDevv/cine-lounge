@@ -23,7 +23,7 @@ export function MainLayout() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.3 }}
-          className={`flex-1 ${showSidebar ? 'ml-56' : ''}`}
+          className={`flex-1 ${showSidebar ? 'md:ml-56' : ''}`}
         >
           <Outlet />
           <Footer />
