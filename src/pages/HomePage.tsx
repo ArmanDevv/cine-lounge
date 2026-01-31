@@ -63,7 +63,7 @@ export default function HomePage() {
       <HeroBanner movies={featuredForBanner} />
 
       {/* Movie Rows */}
-      <div className="-mt-16 relative z-10 pt-4">
+      <div className="relative z-10 py-8">
         {/* Continue Watching */}
         {continueWatching.length > 0 && (
           <MovieRow 
