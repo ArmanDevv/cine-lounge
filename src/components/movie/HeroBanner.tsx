@@ -48,7 +48,7 @@ export function HeroBanner({ movies }: HeroBannerProps) {
       </AnimatePresence>
 
       {/* Content */}
-      <div className="relative h-full flex items-center px-4 md:px-16 pt-20">
+      <div className="relative h-full flex items-center px-4 md:px-16 pt-20 pb-32">
         <motion.div
           key={`content-${currentMovie.id}`}
           initial={{ opacity: 0, y: 30 }}
