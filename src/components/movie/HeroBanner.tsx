@@ -25,7 +25,7 @@ export function HeroBanner({ movies }: HeroBannerProps) {
   if (!currentMovie) return null;
 
   return (
-    <div className="relative h-[70vh] md:h-[85vh] overflow-hidden">
+    <div className="relative h-[75vh] md:h-[80vh] min-h-[500px] max-h-[700px] overflow-hidden">
       <AnimatePresence mode="wait">
         <motion.div
           key={currentMovie.id}
