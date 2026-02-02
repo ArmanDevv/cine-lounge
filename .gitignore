@@ -1,0 +1,12 @@
+# Frontend
+frontend/node_modules
+
+# Backend
+backend/node_modules
+
+# Env files
+.env
+
+# OS junk
+.DS_Store
+Thumbs.db
