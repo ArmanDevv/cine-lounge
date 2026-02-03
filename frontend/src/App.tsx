@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { MainLayout } from "./components/layout/MainLayout";
+import { ProtectedRoute } from "./components/ProtectedRoute";
 
 // Pages
 import HomePage from "./pages/HomePage";
@@ -49,9 +50,9 @@ const App = () => (
             <Route path="/groups/:id" element={<GroupDetailPage />} />
             <Route path="/watch-party" element={<WatchPartyPage />} />
             <Route path="/watch-party/:groupId" element={<WatchPartyPage />} />
-            <Route path="/admin" element={<AdminDashboard />} />
-            <Route path="/admin/movies" element={<AdminMoviesPage />} />
-            <Route path="/admin/users" element={<AdminUsersPage />} />
+            <Route path="/admin" element={<ProtectedRoute requireAdmin><AdminDashboard /></ProtectedRoute>} />
+            <Route path="/admin/movies" element={<ProtectedRoute requireAdmin><AdminMoviesPage /></ProtectedRoute>} />
+            <Route path="/admin/users" element={<ProtectedRoute requireAdmin><AdminUsersPage /></ProtectedRoute>} />
           </Route>
           
           <Route path="*" element={<NotFound />} />

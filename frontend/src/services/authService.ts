@@ -23,34 +23,27 @@ const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 export const authService = {
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
-    // Mock implementation - replace with actual API call
-    await delay(1000);
-    return {
-      user: currentUser,
-      token: 'mock_jwt_token_123',
-    };
-    // return api.post('/auth/login', credentials);
+    console.log('Making login API call to:', api.defaults.baseURL + '/auth/login');
+    const response = await api.post('/auth/login', credentials);
+    console.log('Login response:', response);
+    return response.data;
   },
 
   async register(data: RegisterData): Promise<AuthResponse> {
-    await delay(1000);
-    return {
-      user: { ...currentUser, username: data.username, email: data.email },
-      token: 'mock_jwt_token_123',
-    };
-    // return api.post('/auth/register', data);
+    console.log('Making register API call to:', api.defaults.baseURL + '/auth/register');
+    const response = await api.post('/auth/register', data);
+    console.log('Register response:', response);
+    return response.data;
   },
 
   async logout(): Promise<void> {
-    await delay(500);
+    await api.post('/auth/logout');
     localStorage.removeItem('auth_token');
-    // return api.post('/auth/logout');
   },
 
   async getCurrentUser(): Promise<User> {
-    await delay(500);
-    return currentUser;
-    // return api.get('/auth/me');
+    const response = await api.get('/auth/me');
+    return response.data;
   },
 
   async oauthLogin(provider: 'google' | 'github' | 'discord'): Promise<void> {
