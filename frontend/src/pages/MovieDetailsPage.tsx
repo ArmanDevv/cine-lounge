@@ -16,27 +16,66 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { MovieRow } from '@/components/movie/MovieRow';
-import { useMovieStore } from '@/stores/movieStore';
-import { mockMovies, mockComments } from '@/data/mockData';
-import { movieService } from '@/services/movieService';
+import { mockComments } from '@/data/mockData';
+import api from '@/services/api';
+
+interface Movie {
+  _id: string;
+  title: string;
+  description: string;
+  genre: string;
+  thumbnailUrl: string;
+  videoUrl: string;
+  uploadedBy: any;
+  createdAt: string;
+}
 
 export default function MovieDetailsPage() {
   const { id } = useParams<{ id: string }>();
-  const [recommended, setRecommended] = useState(mockMovies.slice(0, 6));
+  const [movie, setMovie] = useState<Movie | null>(null);
+  const [recommended, setRecommended] = useState<Movie[]>([]);
   const [comments, setComments] = useState(mockComments);
   const [newComment, setNewComment] = useState('');
   const [userRating, setUserRating] = useState(0);
-
-  const { currentMovie, fetchMovieById, isLoading } = useMovieStore();
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (id) {
-      fetchMovieById(id);
-      movieService.getRecommendedMovies(id).then(setRecommended);
+      fetchMovie();
+      fetchRecommended();
     }
   }, [id]);
 
-  const movie = currentMovie || mockMovies.find(m => m.id === id);
+  const fetchMovie = async () => {
+    try {
+      setLoading(true);
+      console.log('Fetching movie with ID:', id);
+      const response = await api.get<Movie>(`/movies/${id}`);
+      console.log('Movie fetched:', response.data);
+      setMovie(response.data);
+    } catch (error: any) {
+      console.error('Failed to fetch movie:', error.response?.status, error.response?.data || error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchRecommended = async () => {
+    try {
+      const response = await api.get<Movie[]>('/movies');
+      setRecommended(response.data.slice(0, 6));
+    } catch (error) {
+      console.error('Failed to fetch recommended:', error);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen pt-20 flex items-center justify-center">
+        <p className="text-muted-foreground">Loading...</p>
+      </div>
+    );
+  }
 
   if (!movie) {
     return (
@@ -59,7 +98,7 @@ export default function MovieDetailsPage() {
       <div className="relative h-[70vh] overflow-hidden">
         <div
           className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: `url(${movie.backdrop})` }}
+          style={{ backgroundImage: `url(${movie.thumbnailUrl})` }}
         >
           <div className="absolute inset-0 bg-gradient-to-r from-background via-background/80 to-transparent" />
           <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
@@ -73,7 +112,7 @@ export default function MovieDetailsPage() {
           >
             {/* Poster */}
             <img
-              src={movie.poster}
+              src={movie.thumbnailUrl}
               alt={movie.title}
               className="w-48 md:w-64 rounded-xl shadow-2xl hidden md:block"
             />
@@ -85,17 +124,9 @@ export default function MovieDetailsPage() {
               </h1>
 
               <div className="flex flex-wrap items-center gap-4 mb-4 text-sm">
-                <div className="flex items-center gap-1 text-yellow-500">
-                  <Star className="w-5 h-5 fill-current" />
-                  <span className="font-semibold text-lg">{movie.rating}</span>
-                </div>
                 <span className="text-muted-foreground flex items-center gap-1">
                   <Calendar className="w-4 h-4" />
-                  {movie.year}
-                </span>
-                <span className="text-muted-foreground flex items-center gap-1">
-                  <Clock className="w-4 h-4" />
-                  {movie.duration} min
+                  {new Date(movie.createdAt).getFullYear()}
                 </span>
                 <Badge variant="secondary" className="text-xs">
                   HD
@@ -103,7 +134,7 @@ export default function MovieDetailsPage() {
               </div>
 
               <div className="flex flex-wrap gap-2 mb-4">
-                {movie.genre.map((genre) => (
+                {(typeof movie.genre === 'string' ? movie.genre.split(',').map(g => g.trim()) : movie.genre).map((genre) => (
                   <Badge key={genre} variant="outline" className="bg-secondary/50">
                     {genre}
                   </Badge>
@@ -115,7 +146,7 @@ export default function MovieDetailsPage() {
               </p>
 
               <div className="flex flex-wrap gap-3">
-                <Link to={`/player/${movie.id}`}>
+                <Link to={`/player/${movie._id}`}>
                   <Button size="lg" className="btn-cinema font-semibold">
                     <Play className="w-5 h-5 mr-2 fill-current" />
                     Play Now

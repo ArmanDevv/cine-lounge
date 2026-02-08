@@ -67,7 +67,7 @@ export function MovieRow({ title, movies, size = 'md', showProgress }: MovieRowP
         >
           {movies.map((movie, index) => (
             <motion.div
-              key={movie.id}
+              key={movie._id}
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: index * 0.05 }}

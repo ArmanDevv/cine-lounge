@@ -11,52 +11,63 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { MovieCard } from '@/components/movie/MovieCard';
-import { useMovieStore } from '@/stores/movieStore';
-import { mockMovies, genres } from '@/data/mockData';
+import { genres } from '@/data/mockData';
+import api from '@/services/api';
+
+interface Movie {
+  _id: string;
+  title: string;
+  description: string;
+  genre: string;
+  thumbnailUrl: string;
+  videoUrl: string;
+}
 
 export default function BrowsePage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGenre, setSelectedGenre] = useState<string>('all');
-  const [selectedYear, setSelectedYear] = useState<string>('all');
   const [sortBy, setSortBy] = useState<string>('trending');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  
-  const { movies, isLoading, fetchMovies } = useMovieStore();
+  const [movies, setMovies] = useState<Movie[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchMovies();
   }, []);
 
+  const fetchMovies = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get<Movie[]>('/movies');
+      setMovies(response.data);
+    } catch (error) {
+      console.error('Failed to fetch movies:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Filter and sort movies
-  const filteredMovies = mockMovies
+  const filteredMovies = movies
     .filter((movie) => {
       if (searchQuery && !movie.title.toLowerCase().includes(searchQuery.toLowerCase())) {
         return false;
       }
-      if (selectedGenre !== 'all' && !movie.genre.includes(selectedGenre)) {
-        return false;
-      }
-      if (selectedYear !== 'all' && movie.year !== parseInt(selectedYear)) {
+      if (selectedGenre !== 'all' && !movie.genre.toLowerCase().includes(selectedGenre.toLowerCase())) {
         return false;
       }
       return true;
     })
     .sort((a, b) => {
       switch (sortBy) {
-        case 'trending':
-          return b.views - a.views;
         case 'newest':
-          return b.year - a.year;
-        case 'rating':
-          return b.rating - a.rating;
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        case 'trending':
         case 'popular':
-          return b.views - a.views;
         default:
           return 0;
       }
     });
-
-  const years = [2024, 2023, 2022, 2021, 2020];
 
   return (
     <div className="min-h-screen pt-20 pb-12 px-4 md:px-8">
@@ -107,20 +118,6 @@ export default function BrowsePage() {
                 </SelectContent>
               </Select>
 
-              <Select value={selectedYear} onValueChange={setSelectedYear}>
-                <SelectTrigger className="w-32 h-11 bg-secondary/50">
-                  <SelectValue placeholder="Year" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Years</SelectItem>
-                  {years.map((year) => (
-                    <SelectItem key={year} value={year.toString()}>
-                      {year}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
               <Select value={sortBy} onValueChange={setSortBy}>
                 <SelectTrigger className="w-36 h-11 bg-secondary/50">
                   <SlidersHorizontal className="w-4 h-4 mr-2" />
@@ -159,7 +156,7 @@ export default function BrowsePage() {
 
         {/* Results Count */}
         <div className="mb-6 text-muted-foreground">
-          Showing {filteredMovies.length} movies
+          {loading ? 'Loading...' : `Showing ${filteredMovies.length} movies`}
         </div>
 
         {/* Movies Grid */}
@@ -167,7 +164,7 @@ export default function BrowsePage() {
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
             {filteredMovies.map((movie, index) => (
               <motion.div
-                key={movie.id}
+                key={movie._id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
@@ -180,14 +177,14 @@ export default function BrowsePage() {
           <div className="space-y-4">
             {filteredMovies.map((movie, index) => (
               <motion.div
-                key={movie.id}
+                key={movie._id}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.05 }}
                 className="glass-panel rounded-xl p-4 flex gap-4 hover:bg-accent/50 transition-colors"
               >
                 <img
-                  src={movie.poster}
+                  src={movie.thumbnailUrl}
                   alt={movie.title}
                   className="w-24 h-36 object-cover rounded-lg flex-shrink-0"
                 />
@@ -195,26 +192,12 @@ export default function BrowsePage() {
                   <h3 className="font-semibold text-lg text-foreground mb-1">
                     {movie.title}
                   </h3>
-                  <div className="flex items-center gap-3 text-sm text-muted-foreground mb-2">
-                    <span>{movie.year}</span>
-                    <span>•</span>
-                    <span>{movie.duration} min</span>
-                    <span>•</span>
-                    <span className="text-yellow-500">★ {movie.rating}</span>
+                  <div className="text-sm text-muted-foreground mb-2">
+                    <span>{movie.genre}</span>
                   </div>
                   <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
                     {movie.description}
                   </p>
-                  <div className="flex gap-2">
-                    {movie.genre.map((g) => (
-                      <span
-                        key={g}
-                        className="px-2 py-0.5 bg-secondary/50 rounded text-xs text-secondary-foreground"
-                      >
-                        {g}
-                      </span>
-                    ))}
-                  </div>
                 </div>
               </motion.div>
             ))}

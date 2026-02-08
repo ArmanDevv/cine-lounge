@@ -28,7 +28,7 @@ export function HeroBanner({ movies }: HeroBannerProps) {
     <div className="relative h-[75vh] md:h-[80vh] min-h-[500px] max-h-[700px] overflow-hidden">
       <AnimatePresence mode="wait">
         <motion.div
-          key={currentMovie.id}
+          key={currentMovie._id}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -38,7 +38,7 @@ export function HeroBanner({ movies }: HeroBannerProps) {
           {/* Background Image */}
           <div
             className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-            style={{ backgroundImage: `url(${currentMovie.backdrop})` }}
+            style={{ backgroundImage: `url(${currentMovie.thumbnailUrl})` }}
           >
             {/* Gradient Overlays */}
             <div className="absolute inset-0 bg-gradient-to-r from-background via-background/60 to-transparent" />
@@ -50,7 +50,7 @@ export function HeroBanner({ movies }: HeroBannerProps) {
       {/* Content */}
       <div className="relative h-full flex items-center px-4 md:px-16 pt-20 pb-32">
         <motion.div
-          key={`content-${currentMovie.id}`}
+          key={`content-${currentMovie._id}`}
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -30 }}
@@ -65,10 +65,8 @@ export function HeroBanner({ movies }: HeroBannerProps) {
           {/* Meta Info */}
           <div className="flex items-center gap-4 mb-4 text-sm md:text-base text-muted-foreground">
             <span className="text-success font-semibold">
-              {Math.floor(currentMovie.rating * 10)}% Match
+              New Upload
             </span>
-            <span>{currentMovie.year}</span>
-            <span>{currentMovie.duration} min</span>
             <span className="px-2 py-0.5 border border-muted-foreground/50 text-xs">
               HD
             </span>
@@ -81,7 +79,7 @@ export function HeroBanner({ movies }: HeroBannerProps) {
 
           {/* Genres */}
           <div className="flex flex-wrap gap-2 mb-6">
-            {currentMovie.genre.map((genre) => (
+            {(typeof currentMovie.genre === 'string' ? currentMovie.genre.split(',').map(g => g.trim()) : currentMovie.genre).map((genre) => (
               <span
                 key={genre}
                 className="px-3 py-1 bg-secondary/50 backdrop-blur-sm rounded-full text-sm text-secondary-foreground"
@@ -93,13 +91,13 @@ export function HeroBanner({ movies }: HeroBannerProps) {
 
           {/* Action Buttons */}
           <div className="flex items-center gap-3">
-            <Link to={`/player/${currentMovie.id}`}>
+            <Link to={`/player/${currentMovie._id}`}>
               <Button size="lg" className="btn-cinema text-lg font-semibold px-8">
                 <Play className="w-5 h-5 mr-2 fill-current" />
                 Play
               </Button>
             </Link>
-            <Link to={`/movies/${currentMovie.id}`}>
+            <Link to={`/movies/${currentMovie._id}`}>
               <Button
                 size="lg"
                 variant="secondary"

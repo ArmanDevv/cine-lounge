@@ -12,21 +12,27 @@ export interface User {
 }
 
 export interface Movie {
-  id: string;
+  _id?: string;
+  id?: string;
   title: string;
   description: string;
-  poster: string;
-  backdrop: string;
+  poster?: string;
+  backdrop?: string;
+  thumbnail?: string;
+  thumbnailUrl?: string;
   trailer?: string;
   videoUrl?: string;
-  genre: string[];
-  year: number;
-  duration: number; // in minutes
-  rating: number;
-  cast: CastMember[];
-  director: string;
-  views: number;
+  genre: string; // API returns genre as string (e.g., "Sci-Fi, Action")
+  year?: number;
+  duration?: number; // in minutes
+  rating?: number;
+  cast?: CastMember[];
+  director?: string;
+  views?: number;
   featured?: boolean;
+  uploadedBy?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface CastMember {

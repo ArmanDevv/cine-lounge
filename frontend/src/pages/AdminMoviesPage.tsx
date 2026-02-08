@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Plus, 
@@ -35,17 +35,53 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { mockMovies, genres } from '@/data/mockData';
+import { genres } from '@/data/mockData';
+import MovieUploadForm from '@/components/admin/MovieUploadForm';
+import api from '@/services/api';
+
+interface Movie {
+  _id: string;
+  title: string;
+  description: string;
+  genre: string;
+  thumbnailUrl: string;
+  videoUrl: string;
+  uploadedBy: any;
+  createdAt: string;
+}
 
 export default function AdminMoviesPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [movies, setMovies] = useState<Movie[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
 
-  const filteredMovies = mockMovies.filter(
+  useEffect(() => {
+    fetchMovies();
+  }, []);
+
+  const fetchMovies = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get<Movie[]>('/admin/movies');
+      setMovies(response.data);
+    } catch (error) {
+      console.error('Failed to fetch movies:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleMovieAdded = () => {
+    setShowAddModal(false);
+    fetchMovies();
+  };
+
+  const filteredMovies = movies.filter(
     (movie) =>
       movie.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      movie.genre.some((g) => g.toLowerCase().includes(searchQuery.toLowerCase()))
+      movie.genre.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const toggleGenre = (genre: string) => {
@@ -85,104 +121,12 @@ export default function AdminMoviesPage() {
               <DialogHeader>
                 <DialogTitle>Add New Movie</DialogTitle>
               </DialogHeader>
-              <div className="space-y-4 pt-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label>Title</Label>
-                    <Input placeholder="Movie title" className="mt-2" />
-                  </div>
-                  <div>
-                    <Label>Year</Label>
-                    <Input type="number" placeholder="2024" className="mt-2" />
-                  </div>
-                </div>
 
-                <div>
-                  <Label>Description</Label>
-                  <Textarea
-                    placeholder="Movie description..."
-                    className="mt-2"
-                    rows={4}
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label>Duration (minutes)</Label>
-                    <Input type="number" placeholder="120" className="mt-2" />
-                  </div>
-                  <div>
-                    <Label>Rating</Label>
-                    <Input type="number" step="0.1" placeholder="8.5" className="mt-2" />
-                  </div>
-                </div>
-
-                <div>
-                  <Label>Genres</Label>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {genres.map((genre) => (
-                      <Badge
-                        key={genre}
-                        variant={selectedGenres.includes(genre) ? 'default' : 'outline'}
-                        className="cursor-pointer"
-                        onClick={() => toggleGenre(genre)}
-                      >
-                        {genre}
-                        {selectedGenres.includes(genre) && (
-                          <X className="w-3 h-3 ml-1" />
-                        )}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <Label>Director</Label>
-                  <Input placeholder="Director name" className="mt-2" />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label>Poster Image</Label>
-                    <div className="mt-2 border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary/50 transition-colors cursor-pointer">
-                      <Upload className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
-                      <p className="text-sm text-muted-foreground">
-                        Click to upload poster
-                      </p>
-                    </div>
-                  </div>
-                  <div>
-                    <Label>Backdrop Image</Label>
-                    <div className="mt-2 border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary/50 transition-colors cursor-pointer">
-                      <Upload className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
-                      <p className="text-sm text-muted-foreground">
-                        Click to upload backdrop
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <Label>Video URL</Label>
-                  <Input placeholder="https://..." className="mt-2" />
-                </div>
-
-                <div>
-                  <Label>Trailer URL</Label>
-                  <Input placeholder="https://..." className="mt-2" />
-                </div>
-
-                <div className="flex gap-3 pt-4">
-                  <Button
-                    variant="outline"
-                    className="flex-1"
-                    onClick={() => setShowAddModal(false)}
-                  >
-                    Cancel
-                  </Button>
-                  <Button className="flex-1 btn-cinema">Add Movie</Button>
-                </div>
-              </div>
+              {/* Upload form - handles presigned upload flow */}
+              <MovieUploadForm
+                onClose={handleMovieAdded}
+                genres={genres}
+              />
             </DialogContent>
           </Dialog>
         </div>
@@ -201,62 +145,51 @@ export default function AdminMoviesPage() {
 
         {/* Movies Table */}
         <div className="glass-panel rounded-xl overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow className="border-border">
-                <TableHead className="w-16">Poster</TableHead>
-                <TableHead>Title</TableHead>
-                <TableHead>Year</TableHead>
-                <TableHead>Genres</TableHead>
-                <TableHead>Rating</TableHead>
-                <TableHead>Views</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredMovies.map((movie) => (
-                <TableRow key={movie.id} className="border-border">
-                  <TableCell>
-                    <img
-                      src={movie.poster}
-                      alt={movie.title}
-                      className="w-10 h-14 object-cover rounded"
-                    />
-                  </TableCell>
-                  <TableCell className="font-medium">{movie.title}</TableCell>
-                  <TableCell>{movie.year}</TableCell>
-                  <TableCell>
-                    <div className="flex gap-1 flex-wrap">
-                      {movie.genre.slice(0, 2).map((g) => (
-                        <Badge key={g} variant="secondary" className="text-xs">
-                          {g}
-                        </Badge>
-                      ))}
-                      {movie.genre.length > 2 && (
-                        <Badge variant="outline" className="text-xs">
-                          +{movie.genre.length - 2}
-                        </Badge>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <span className="text-yellow-500">★</span> {movie.rating}
-                  </TableCell>
-                  <TableCell>{(movie.views / 1000).toFixed(0)}K</TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <Button variant="ghost" size="icon">
-                        <Edit2 className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="text-destructive">
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
+          {loading ? (
+            <div className="p-8 text-center text-muted-foreground">Loading movies...</div>
+          ) : filteredMovies.length === 0 ? (
+            <div className="p-8 text-center text-muted-foreground">No movies found</div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow className="border-border">
+                  <TableHead className="w-16">Poster</TableHead>
+                  <TableHead>Title</TableHead>
+                  <TableHead>Genre</TableHead>
+                  <TableHead>Uploaded By</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {filteredMovies.map((movie) => (
+                  <TableRow key={movie._id} className="border-border">
+                    <TableCell>
+                      <img
+                        src={movie.thumbnailUrl}
+                        alt={movie.title}
+                        className="w-10 h-14 object-cover rounded"
+                      />
+                    </TableCell>
+                    <TableCell className="font-medium">{movie.title}</TableCell>
+                    <TableCell>
+                      <Badge variant="secondary">{movie.genre}</Badge>
+                    </TableCell>
+                    <TableCell>{movie.uploadedBy?.username || 'Unknown'}</TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <Button variant="ghost" size="icon">
+                          <Edit2 className="w-4 h-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="text-destructive">
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </div>
       </motion.div>
     </div>

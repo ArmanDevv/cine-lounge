@@ -18,7 +18,7 @@ const sizeClasses = {
 
 export function MovieCard({ movie, size = 'md', showProgress }: MovieCardProps) {
   return (
-    <Link to={`/movies/${movie.id}`}>
+    <Link to={`/movies/${movie._id}`}>
       <motion.div
         className={`relative ${sizeClasses[size]} rounded-lg overflow-hidden group cursor-pointer flex-shrink-0`}
         whileHover={{ scale: 1.05, y: -8 }}
@@ -26,7 +26,7 @@ export function MovieCard({ movie, size = 'md', showProgress }: MovieCardProps) 
       >
         {/* Poster Image */}
         <img
-          src={movie.poster}
+          src={movie.thumbnailUrl}
           alt={movie.title}
           className="w-full h-full object-cover"
         />
@@ -40,15 +40,7 @@ export function MovieCard({ movie, size = 'md', showProgress }: MovieCardProps) 
             {movie.title}
           </h3>
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <span className="flex items-center gap-1">
-              <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" />
-              {movie.rating}
-            </span>
-            <span>{movie.year}</span>
-            <span className="flex items-center gap-1">
-              <Clock className="w-3 h-3" />
-              {movie.duration}m
-            </span>
+            <span>{movie.genre}</span>
           </div>
           
           {/* Quick Actions */}
@@ -58,7 +50,7 @@ export function MovieCard({ movie, size = 'md', showProgress }: MovieCardProps) 
               className="flex-1 h-7 text-xs bg-primary hover:bg-primary/90"
               onClick={(e) => {
                 e.preventDefault();
-                window.location.href = `/player/${movie.id}`;
+                window.location.href = `/player/${movie._id}`;
               }}
             >
               <Play className="w-3 h-3 mr-1" />
@@ -76,9 +68,8 @@ export function MovieCard({ movie, size = 'md', showProgress }: MovieCardProps) 
         </div>
 
         {/* Rating Badge */}
-        <div className="absolute top-2 right-2 bg-background/80 backdrop-blur-sm rounded px-1.5 py-0.5 text-xs font-medium flex items-center gap-1">
-          <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" />
-          {movie.rating}
+        <div className="absolute top-2 right-2 bg-background/80 backdrop-blur-sm rounded px-1.5 py-0.5 text-xs font-medium">
+          {movie.genre}
         </div>
 
         {/* Progress Bar */}

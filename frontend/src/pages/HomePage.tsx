@@ -1,39 +1,61 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { HeroBanner } from '@/components/movie/HeroBanner';
 import { MovieRow } from '@/components/movie/MovieRow';
 import { useMovieStore } from '@/stores/movieStore';
-import { mockMovies, genres } from '@/data/mockData';
+import { genres } from '@/data/mockData';
 import { Skeleton } from '@/components/ui/skeleton';
+import api from '@/services/api';
+
+interface Movie {
+  _id: string;
+  title: string;
+  description: string;
+  genre: string;
+  thumbnailUrl: string;
+  videoUrl: string;
+}
 
 export default function HomePage() {
   const { 
-    featuredMovies, 
-    trendingMovies, 
     watchHistory,
-    fetchFeaturedMovies, 
-    fetchTrendingMovies,
     isLoading 
   } = useMovieStore();
+  
+  const [movies, setMovies] = useState<Movie[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchFeaturedMovies();
-    fetchTrendingMovies();
+    fetchMovies();
   }, []);
 
-  const featuredForBanner = featuredMovies.length > 0 ? featuredMovies : mockMovies.filter(m => m.featured);
-  const trendingForRow = trendingMovies.length > 0 ? trendingMovies : mockMovies;
+  const fetchMovies = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get<Movie[]>('/movies');
+      // Remove duplicates based on _id
+      const uniqueMovies = Array.from(new Map(response.data.map(m => [m._id, m])).values());
+      setMovies(uniqueMovies);
+    } catch (error) {
+      console.error('Failed to fetch movies:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const featuredForBanner = movies.slice(0, Math.max(5, Math.floor(movies.length / 2)));
+  const trendingForRow = movies;
 
   // Get movies by genre
   const getMoviesByGenre = (genre: string) => 
-    mockMovies.filter(m => m.genre.includes(genre));
+    movies.filter(m => m.genre.toLowerCase().includes(genre.toLowerCase()));
 
   // Continue watching movies
   const continueWatching = watchHistory
     .filter(h => h.progress > 0 && h.progress < 100)
     .map(h => h.movie);
 
-  if (isLoading) {
+  if (loading || isLoading) {
     return (
       <div className="min-h-screen pt-16">
         <Skeleton className="h-[85vh] w-full" />
@@ -88,19 +110,19 @@ export default function HomePage() {
         {/* Popular This Week */}
         <MovieRow 
           title="Popular This Week" 
-          movies={[...mockMovies].sort((a, b) => b.views - a.views).slice(0, 8)} 
+          movies={movies.slice(0, 8)} 
         />
 
         {/* New Releases */}
         <MovieRow 
           title="New Releases" 
-          movies={[...mockMovies].sort((a, b) => b.year - a.year).slice(0, 8)} 
+          movies={movies.slice(0, 8)} 
         />
 
         {/* Top Rated */}
         <MovieRow 
           title="Top Rated" 
-          movies={[...mockMovies].sort((a, b) => b.rating - a.rating).slice(0, 8)} 
+          movies={movies.slice(0, 8)} 
         />
       </div>
     </motion.div>

@@ -40,3 +40,17 @@
 .read-the-docs {
   color: #888;
 }
+
+/* Video.js Player Styling */
+.video-js {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.vjs-default-skin .vjs-tech {
+  width: 100% !important;
+  height: 100% !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+}
