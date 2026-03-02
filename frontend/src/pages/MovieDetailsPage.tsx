@@ -62,8 +62,8 @@ export default function MovieDetailsPage() {
 
   const fetchRecommended = async () => {
     try {
-      const response = await api.get<Movie[]>('/movies');
-      setRecommended(response.data.slice(0, 6));
+      const response = await api.get<{ data: Movie[] }>('/movies');
+      setRecommended((response.data.data || []).slice(0, 6));
     } catch (error) {
       console.error('Failed to fetch recommended:', error);
     }

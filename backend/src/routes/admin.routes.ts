@@ -13,4 +13,10 @@ router.get('/movies', adminController.getAllMovies);
 // Save movie metadata
 router.post('/movies', authenticate, requireAdmin, adminController.createMovie);
 
+// Update movie
+router.put('/movies/:id', authenticate, requireAdmin, adminController.updateMovie);
+
+// Delete movie
+router.delete('/movies/:id', authenticate, requireAdmin, adminController.deleteMovie);
+
 export default router;

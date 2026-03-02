@@ -8,6 +8,11 @@ export interface IUser extends Document {
   bio?: string;
   role: 'user' | 'admin' | 'moderator';
   isOnline: boolean;
+  watchHistory: Array<{
+    movieId: mongoose.Types.ObjectId;
+    progress: number;
+    lastWatched: Date;
+  }>;
   createdAt: Date;
 }
 
@@ -45,6 +50,22 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  watchHistory: [
+    {
+      movieId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Movie',
+      },
+      progress: {
+        type: Number,
+        default: 0, // percentage 0-100
+      },
+      lastWatched: {
+        type: Date,
+        default: Date.now,
+      },
+    },
+  ],
 }, {
   timestamps: true,
 });

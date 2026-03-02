@@ -19,7 +19,8 @@ interface Movie {
 export default function HomePage() {
   const { 
     watchHistory,
-    isLoading 
+    isLoading,
+    fetchWatchHistory
   } = useMovieStore();
   
   const [movies, setMovies] = useState<Movie[]>([]);
@@ -27,14 +28,18 @@ export default function HomePage() {
 
   useEffect(() => {
     fetchMovies();
+    fetchWatchHistory();
   }, []);
 
   const fetchMovies = async () => {
     try {
       setLoading(true);
-      const response = await api.get<Movie[]>('/movies');
-      // Remove duplicates based on _id
-      const uniqueMovies = Array.from(new Map(response.data.map(m => [m._id, m])).values());
+      const response = await api.get<{ data: Movie[] }>('/movies');
+      // remove duplicates based on _id
+      const moviesArray = response.data.data || [];
+      const uniqueMovies = Array.from(
+        new Map(moviesArray.map(m => [m._id, m])).values()
+      );
       setMovies(uniqueMovies);
     } catch (error) {
       console.error('Failed to fetch movies:', error);
@@ -50,10 +55,19 @@ export default function HomePage() {
   const getMoviesByGenre = (genre: string) => 
     movies.filter(m => m.genre.toLowerCase().includes(genre.toLowerCase()));
 
-  // Continue watching movies
+  // Continue watching movies - show real watch history
   const continueWatching = watchHistory
     .filter(h => h.progress > 0 && h.progress < 100)
-    .map(h => h.movie);
+    .map(h => h.movie)
+    .filter(m => m && m._id); // Ensure valid movies
+
+  // Create a map of movie IDs to progress percentages
+  const progressMap: Record<string, number> = {};
+  watchHistory.forEach(h => {
+    if (h.progress > 0 && h.progress < 100 && h.movie && h.movie._id) {
+      progressMap[h.movie._id] = h.progress;
+    }
+  });
 
   if (loading || isLoading) {
     return (
@@ -92,6 +106,7 @@ export default function HomePage() {
             title="Continue Watching" 
             movies={continueWatching} 
             showProgress
+            progressMap={progressMap}
           />
         )}
 

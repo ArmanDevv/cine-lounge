@@ -38,8 +38,8 @@ export default function BrowsePage() {
   const fetchMovies = async () => {
     try {
       setLoading(true);
-      const response = await api.get<Movie[]>('/movies');
-      setMovies(response.data);
+      const response = await api.get<{ data: Movie[] }>('/movies');
+      setMovies(response.data.data || []);
     } catch (error) {
       console.error('Failed to fetch movies:', error);
     } finally {

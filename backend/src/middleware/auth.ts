@@ -4,6 +4,7 @@ import User from '../models/User';
 
 interface AuthRequest extends Request {
   user?: any;
+  userId?: string;
 }
 
 // Middleware to verify JWT token
@@ -22,6 +23,7 @@ export const authenticate = async (req: AuthRequest, res: Response, next: NextFu
     }
 
     req.user = user;
+    req.userId = decoded.userId;
     next();
   } catch (error) {
     res.status(401).json({ message: 'Invalid token' });

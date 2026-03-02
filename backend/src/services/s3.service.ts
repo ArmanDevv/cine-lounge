@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -68,4 +68,46 @@ export async function generatePresignedReadUrl(fileKey: string, expiresIn: numbe
   }
 }
 
-export default { generatePresignedUploadUrl, generatePresignedReadUrl };
+export async function deleteFileFromS3(videoUrl: string) {
+  try {
+    // Extract file key from URL
+    // URL format: https://bucket.s3.region.amazonaws.com/movies/uuid-filename or
+    // https://cloudfront-url/movies/uuid-filename
+    const fileKey = extractFileKeyFromUrl(videoUrl);
+    
+    if (!fileKey) {
+      console.warn(`Could not extract file key from URL: ${videoUrl}`);
+      return;
+    }
+
+    const deleteCommand = new DeleteObjectCommand({
+      Bucket: BUCKET,
+      Key: fileKey,
+    });
+
+    await s3Client.send(deleteCommand);
+    console.log(`Successfully deleted file from S3: ${fileKey}`);
+  } catch (error) {
+    console.error(`Failed to delete file from S3:`, error);
+    // Don't throw - we don't want to fail the operation if S3 delete fails
+  }
+}
+
+function extractFileKeyFromUrl(videoUrl: string): string | null {
+  try {
+    // Handle both direct S3 and CloudFront URLs
+    // S3: https://bucket.s3.region.amazonaws.com/movies/uuid-filename
+    // CloudFront: https://xxxx.cloudfront.net/movies/uuid-filename
+    
+    const url = new URL(videoUrl);
+    const pathname = url.pathname;
+    
+    // Remove leading slash and return the path
+    return pathname.startsWith('/') ? pathname.substring(1) : pathname;
+  } catch (error) {
+    console.error(`Failed to extract file key from URL: ${videoUrl}`, error);
+    return null;
+  }
+}
+
+export default { generatePresignedUploadUrl, generatePresignedReadUrl, deleteFileFromS3 };

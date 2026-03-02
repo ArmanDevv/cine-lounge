@@ -11,6 +11,25 @@ router.post('/register', async (req, res) => {
   try {
     const { username, email, password } = req.body;
 
+    // Validate input
+    if (!username || !email || !password) {
+      return res.status(400).json({ 
+        message: 'Username, email, and password are required' 
+      });
+    }
+
+    if (username.length < 3) {
+      return res.status(400).json({ 
+        message: 'Username must be at least 3 characters' 
+      });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({ 
+        message: 'Password must be at least 6 characters' 
+      });
+    }
+
     // Check if user exists
     const existingUser = await User.findOne({ $or: [{ email }, { username }] });
     if (existingUser) {
@@ -49,16 +68,23 @@ router.post('/register', async (req, res) => {
       },
       token,
     });
-  } catch (error) {
-    res.status(500).json({ message: 'Server error' });
+  } catch (error: any) {
+    console.error('Registration error:', error);
+    res.status(500).json({ message: error.message || 'Server error' });
   }
 });
 
 // Login
 router.post('/login', async (req, res) => {
   try {
-    console.log('Login request body:', req.body);
     const { email, password } = req.body;
+
+    // Validate input
+    if (!email || !password) {
+      return res.status(400).json({ 
+        message: 'Email and password are required' 
+      });
+    }
 
     // Find user
     const user = await User.findOne({ email });
@@ -169,6 +195,78 @@ router.patch('/users/:id/role', authenticate, requireAdmin, async (req, res) => 
     res.json(user);
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Save watch progress
+router.post('/watch-history', authenticate, async (req, res) => {
+  try {
+    const { movieId, progress } = req.body;
+    const userId = (req as any).userId;
+
+    if (!movieId || progress === undefined) {
+      return res.status(400).json({ message: 'movieId and progress are required' });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Find or create watch history entry
+    const existingEntry = user.watchHistory.find(
+      h => h.movieId.toString() === movieId
+    );
+
+    if (existingEntry) {
+      existingEntry.progress = progress;
+      existingEntry.lastWatched = new Date();
+    } else {
+      user.watchHistory.push({
+        movieId,
+        progress,
+        lastWatched: new Date(),
+      });
+    }
+
+    await user.save();
+
+    res.json({
+      message: 'Watch progress saved',
+      watchHistory: user.watchHistory,
+    });
+  } catch (error: any) {
+    console.error('Watch history save error:', error);
+    res.status(500).json({ message: error.message || 'Server error' });
+  }
+});
+
+// Get user's watch history
+router.get('/watch-history', authenticate, async (req, res) => {
+  try {
+    const userId = (req as any).userId;
+
+    const user = await User.findById(userId).populate({
+      path: 'watchHistory.movieId',
+      select: '_id title description genre thumbnailUrl videoUrl',
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Transform response to match frontend expectations
+    const watchHistory = user.watchHistory.map(h => ({
+      movieId: h.movieId._id,
+      movie: h.movieId,
+      progress: h.progress,
+      lastWatched: h.lastWatched,
+    }));
+
+    res.json(watchHistory);
+  } catch (error: any) {
+    console.error('Watch history fetch error:', error);
+    res.status(500).json({ message: error.message || 'Server error' });
   }
 });
 

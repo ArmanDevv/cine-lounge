@@ -1,53 +1,41 @@
 import { create } from 'zustand';
-import { Group, Playlist, WatchParty, ChatMessage, ScheduledWatch } from '@/types';
-import { groupService } from '@/services/groupService';
-import { chatService } from '@/services/chatService';
+import { groupService, Group } from '@/services/groupService';
 
 interface GroupState {
   groups: Group[];
   currentGroup: Group | null;
-  playlists: Playlist[];
-  currentPlaylist: Playlist | null;
-  watchParty: WatchParty | null;
-  scheduledWatches: ScheduledWatch[];
-  messages: ChatMessage[];
+  messages: Group['messages'];
   isLoading: boolean;
   error: string | null;
 
-  fetchGroups: () => Promise<void>;
+  // Group methods
+  fetchUserGroups: () => Promise<void>;
   fetchGroupById: (id: string) => Promise<void>;
   createGroup: (name: string, description?: string) => Promise<Group>;
-  joinGroup: (inviteCode: string) => Promise<Group | null>;
-  
-  fetchPlaylists: () => Promise<void>;
-  fetchPlaylistById: (id: string) => Promise<void>;
-  createPlaylist: (name: string, description?: string, isPublic?: boolean) => Promise<Playlist>;
-  
-  fetchWatchParty: (groupId: string) => Promise<void>;
-  createWatchParty: (groupId: string, movieId: string) => Promise<void>;
-  
-  fetchScheduledWatches: (groupId: string) => Promise<void>;
-  
+  joinGroup: (inviteCode: string) => Promise<Group>;
+  deleteGroup: (groupId: string) => Promise<void>;
+
+  // Playlist methods
+  addToPlaylist: (groupId: string, movieId: string) => Promise<void>;
+  removeFromPlaylist: (groupId: string, movieId: string) => Promise<void>;
+
+  // Message methods
   fetchMessages: (groupId: string) => Promise<void>;
-  sendMessage: (groupId: string, content: string) => Promise<void>;
-  addMessage: (message: ChatMessage) => void;
+  addMessage: (message: Group['messages'][0]) => void;
+  setCurrentGroup: (group: Group | null) => void;
 }
 
 export const useGroupStore = create<GroupState>((set, get) => ({
   groups: [],
   currentGroup: null,
-  playlists: [],
-  currentPlaylist: null,
-  watchParty: null,
-  scheduledWatches: [],
   messages: [],
   isLoading: false,
   error: null,
 
-  fetchGroups: async () => {
-    set({ isLoading: true });
+  fetchUserGroups: async () => {
+    set({ isLoading: true, error: null });
     try {
-      const groups = await groupService.getGroups();
+      const groups = await groupService.getUserGroups();
       set({ groups, isLoading: false });
     } catch (error: any) {
       set({ error: error.message, isLoading: false });
@@ -55,92 +43,96 @@ export const useGroupStore = create<GroupState>((set, get) => ({
   },
 
   fetchGroupById: async (id) => {
-    set({ isLoading: true });
+    set({ isLoading: true, error: null });
     try {
       const group = await groupService.getGroupById(id);
-      set({ currentGroup: group || null, isLoading: false });
+      set({ currentGroup: group, isLoading: false });
     } catch (error: any) {
       set({ error: error.message, isLoading: false });
     }
   },
 
   createGroup: async (name, description) => {
-    const group = await groupService.createGroup({ name, description });
-    set(state => ({ groups: [...state.groups, group] }));
-    return group;
+    try {
+      const group = await groupService.createGroup({ name, description });
+      set(state => ({
+        groups: [...state.groups, group],
+        currentGroup: group,
+      }));
+      return group;
+    } catch (error: any) {
+      set({ error: error.message });
+      throw error;
+    }
   },
 
   joinGroup: async (inviteCode) => {
-    const group = await groupService.joinGroup(inviteCode);
-    if (group) {
-      set(state => ({ groups: [...state.groups, group] }));
-    }
-    return group;
-  },
-
-  fetchPlaylists: async () => {
-    set({ isLoading: true });
     try {
-      const playlists = await groupService.getPlaylists();
-      set({ playlists, isLoading: false });
-    } catch (error: any) {
-      set({ error: error.message, isLoading: false });
-    }
-  },
-
-  fetchPlaylistById: async (id) => {
-    try {
-      const playlist = await groupService.getPlaylistById(id);
-      set({ currentPlaylist: playlist || null });
+      const group = await groupService.joinGroup(inviteCode);
+      set(state => ({
+        groups: [...state.groups, group],
+        currentGroup: group,
+      }));
+      return group;
     } catch (error: any) {
       set({ error: error.message });
+      throw error;
     }
   },
 
-  createPlaylist: async (name, description, isPublic = true) => {
-    const playlist = await groupService.createPlaylist({ name, description, isPublic });
-    set(state => ({ playlists: [...state.playlists, playlist] }));
-    return playlist;
-  },
-
-  fetchWatchParty: async (groupId) => {
+  deleteGroup: async (groupId) => {
     try {
-      const watchParty = await groupService.getWatchParty(groupId);
-      set({ watchParty });
+      await groupService.deleteGroup(groupId);
+      set(state => ({
+        groups: state.groups.filter(g => g._id !== groupId),
+        currentGroup: state.currentGroup?._id === groupId ? null : state.currentGroup,
+      }));
     } catch (error: any) {
       set({ error: error.message });
+      throw error;
     }
   },
 
-  createWatchParty: async (groupId, movieId) => {
-    const watchParty = await groupService.createWatchParty(groupId, movieId);
-    set({ watchParty });
-  },
-
-  fetchScheduledWatches: async (groupId) => {
+  addToPlaylist: async (groupId, movieId) => {
     try {
-      const scheduledWatches = await groupService.getScheduledWatches(groupId);
-      set({ scheduledWatches });
+      const group = await groupService.addToPlaylist(groupId, movieId);
+      set(state => ({
+        groups: state.groups.map(g => (g._id === groupId ? group : g)),
+        currentGroup: state.currentGroup?._id === groupId ? group : state.currentGroup,
+      }));
     } catch (error: any) {
       set({ error: error.message });
+      throw error;
+    }
+  },
+
+  removeFromPlaylist: async (groupId, movieId) => {
+    try {
+      const group = await groupService.removeFromPlaylist(groupId, movieId);
+      set(state => ({
+        groups: state.groups.map(g => (g._id === groupId ? group : g)),
+        currentGroup: state.currentGroup?._id === groupId ? group : state.currentGroup,
+      }));
+    } catch (error: any) {
+      set({ error: error.message });
+      throw error;
     }
   },
 
   fetchMessages: async (groupId) => {
     try {
-      const messages = await chatService.getMessages(groupId);
+      const messages = await groupService.getGroupMessages(groupId);
       set({ messages });
     } catch (error: any) {
       set({ error: error.message });
     }
   },
 
-  sendMessage: async (groupId, content) => {
-    const message = await chatService.sendMessage(groupId, content);
+  addMessage: (message) => {
     set(state => ({ messages: [...state.messages, message] }));
   },
 
-  addMessage: (message) => {
-    set(state => ({ messages: [...state.messages, message] }));
+  setCurrentGroup: (group) => {
+    set({ currentGroup: group });
   },
 }));

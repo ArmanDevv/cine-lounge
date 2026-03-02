@@ -13,7 +13,6 @@ import {
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useGroupStore } from '@/stores/groupStore';
-import { mockGroups } from '@/data/mockData';
 import { Link } from 'react-router-dom';
 
 export default function GroupsPage() {
@@ -23,14 +22,16 @@ export default function GroupsPage() {
   const [newGroupName, setNewGroupName] = useState('');
   const [newGroupDescription, setNewGroupDescription] = useState('');
   const [inviteCode, setInviteCode] = useState('');
+  const [isCreating, setIsCreating] = useState(false);
+  const [isJoining, setIsJoining] = useState(false);
 
-  const { groups, fetchGroups, createGroup, joinGroup } = useGroupStore();
+  const { groups, isLoading, error, fetchUserGroups, createGroup, joinGroup } = useGroupStore();
 
   useEffect(() => {
-    fetchGroups();
-  }, []);
+    fetchUserGroups();
+  }, [fetchUserGroups]);
 
-  const displayGroups = mockGroups.filter(
+  const displayGroups = groups.filter(
     (group) =>
       group.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       group.description?.toLowerCase().includes(searchQuery.toLowerCase())
@@ -38,17 +39,31 @@ export default function GroupsPage() {
 
   const handleCreateGroup = async () => {
     if (!newGroupName.trim()) return;
-    await createGroup(newGroupName, newGroupDescription);
-    setShowCreateModal(false);
-    setNewGroupName('');
-    setNewGroupDescription('');
+    setIsCreating(true);
+    try {
+      await createGroup(newGroupName, newGroupDescription);
+      setShowCreateModal(false);
+      setNewGroupName('');
+      setNewGroupDescription('');
+    } catch (err) {
+      console.error('Failed to create group:', err);
+    } finally {
+      setIsCreating(false);
+    }
   };
 
   const handleJoinGroup = async () => {
     if (!inviteCode.trim()) return;
-    await joinGroup(inviteCode);
-    setShowJoinModal(false);
-    setInviteCode('');
+    setIsJoining(true);
+    try {
+      await joinGroup(inviteCode);
+      setShowJoinModal(false);
+      setInviteCode('');
+    } catch (err) {
+      console.error('Failed to join group:', err);
+    } finally {
+      setIsJoining(false);
+    }
   };
 
   return (
@@ -90,8 +105,12 @@ export default function GroupsPage() {
                       className="mt-2"
                     />
                   </div>
-                  <Button onClick={handleJoinGroup} className="w-full btn-cinema">
-                    Join Group
+                  <Button
+                    onClick={handleJoinGroup}
+                    disabled={isJoining}
+                    className="w-full btn-cinema"
+                  >
+                    {isJoining ? 'Joining...' : 'Join Group'}
                   </Button>
                 </div>
               </DialogContent>
@@ -128,14 +147,24 @@ export default function GroupsPage() {
                       className="mt-2"
                     />
                   </div>
-                  <Button onClick={handleCreateGroup} className="w-full btn-cinema">
-                    Create Group
+                  <Button
+                    onClick={handleCreateGroup}
+                    disabled={isCreating}
+                    className="w-full btn-cinema"
+                  >
+                    {isCreating ? 'Creating...' : 'Create Group'}
                   </Button>
                 </div>
               </DialogContent>
             </Dialog>
           </div>
         </div>
+
+        {error && (
+          <div className="mb-4 p-4 bg-destructive/10 text-destructive rounded-lg">
+            {error}
+          </div>
+        )}
 
         {/* Search */}
         <div className="relative mb-8 max-w-md">
@@ -149,76 +178,83 @@ export default function GroupsPage() {
           />
         </div>
 
-        {/* Groups Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {displayGroups.map((group, index) => (
-            <motion.div
-              key={group.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-            >
-              <Link to={`/groups/${group.id}`}>
-                <div className="glass-panel rounded-xl overflow-hidden hover:ring-2 ring-primary/50 transition-all cursor-pointer">
-                  {/* Cover */}
-                  <div
-                    className="h-32 bg-cover bg-center relative"
-                    style={{ backgroundImage: `url(${group.cover})` }}
-                  >
-                    <div className="absolute inset-0 bg-gradient-to-t from-card to-transparent" />
-                  </div>
+        {isLoading ? (
+          <div className="text-center py-16">
+            <p className="text-muted-foreground">Loading groups...</p>
+          </div>
+        ) : (
+          <>
+            {/* Groups Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {displayGroups.map((group, index) => (
+                <motion.div
+                  key={group._id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                >
+                  <Link to={`/groups/${group._id}`}>
+                    <div className="glass-panel rounded-xl overflow-hidden hover:ring-2 ring-primary/50 transition-all cursor-pointer">
+                      {/* Cover */}
+                      <div className="h-32 bg-gradient-to-br from-primary via-primary/50 to-background relative" />
 
-                  {/* Content */}
-                  <div className="p-4 -mt-8 relative">
-                    <img
-                      src={group.avatar}
-                      alt={group.name}
-                      className="w-16 h-16 rounded-xl object-cover border-4 border-card mb-3"
-                    />
-                    <h3 className="font-semibold text-lg">{group.name}</h3>
-                    <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
-                      {group.description}
-                    </p>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Users className="w-4 h-4" />
-                        <span>{group.members.length} members</span>
-                      </div>
-                      <div className="flex -space-x-2">
-                        {group.members.slice(0, 3).map((member) => (
-                          <img
-                            key={member.user.id}
-                            src={member.user.avatar}
-                            alt={member.user.username}
-                            className="w-6 h-6 rounded-full border-2 border-card"
-                          />
-                        ))}
-                        {group.members.length > 3 && (
-                          <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-xs">
-                            +{group.members.length - 3}
+                      {/* Content */}
+                      <div className="p-4 -mt-8 relative">
+                        <div className="w-16 h-16 rounded-xl bg-muted flex items-center justify-center mb-3 font-semibold text-lg">
+                          {group.name.substring(0, 2).toUpperCase()}
+                        </div>
+                        <h3 className="font-semibold text-lg">{group.name}</h3>
+                        <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
+                          {group.description || 'No description'}
+                        </p>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Users className="w-4 h-4" />
+                            <span>{group.members.length} members</span>
                           </div>
-                        )}
+                          <div className="flex -space-x-2">
+                            {group.members.slice(0, 3).map((member) => (
+                              <img
+                                key={member.userId._id}
+                                src={member.userId.avatar}
+                                alt={member.userId.username}
+                                className="w-6 h-6 rounded-full border-2 border-card"
+                              />
+                            ))}
+                            {group.members.length > 3 && (
+                              <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-xs">
+                                +{group.members.length - 3}
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </div>
-              </Link>
-            </motion.div>
-          ))}
-        </div>
+                  </Link>
+                </motion.div>
+              ))}
+            </div>
 
-        {/* Empty State */}
-        {displayGroups.length === 0 && (
-          <div className="text-center py-16">
-            <Users className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-xl font-semibold mb-2">No groups found</h3>
-            <p className="text-muted-foreground mb-6">
-              Create a new group or join one with an invite code
-            </p>
-            <Button onClick={() => setShowCreateModal(true)} className="btn-cinema">
-              Create Your First Group
-            </Button>
-          </div>
+            {/* Empty State */}
+            {displayGroups.length === 0 && (
+              <div className="text-center py-16">
+                <Users className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-xl font-semibold mb-2">
+                  {groups.length === 0 ? 'No groups yet' : 'No matching groups'}
+                </h3>
+                <p className="text-muted-foreground mb-6">
+                  {groups.length === 0
+                    ? 'Create a new group or join one with an invite code'
+                    : 'Try adjusting your search'}
+                </p>
+                {groups.length === 0 && (
+                  <Button onClick={() => setShowCreateModal(true)} className="btn-cinema">
+                    Create Your First Group
+                  </Button>
+                )}
+              </div>
+            )}
+          </>
         )}
       </motion.div>
     </div>

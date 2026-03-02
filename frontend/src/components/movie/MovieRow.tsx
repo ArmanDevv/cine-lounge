@@ -10,9 +10,10 @@ interface MovieRowProps {
   movies: Movie[];
   size?: 'sm' | 'md' | 'lg';
   showProgress?: boolean;
+  progressMap?: Record<string, number>; // movieId -> progress %
 }
 
-export function MovieRow({ title, movies, size = 'md', showProgress }: MovieRowProps) {
+export function MovieRow({ title, movies, size = 'md', showProgress, progressMap = {} }: MovieRowProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
@@ -75,7 +76,7 @@ export function MovieRow({ title, movies, size = 'md', showProgress }: MovieRowP
               <MovieCard 
                 movie={movie} 
                 size={size}
-                showProgress={showProgress ? 75 : undefined}
+                showProgress={showProgress && movie._id ? progressMap[movie._id] : undefined}
               />
             </motion.div>
           ))}

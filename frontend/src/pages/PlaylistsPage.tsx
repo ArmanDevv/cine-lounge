@@ -13,7 +13,6 @@ import {
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { useGroupStore } from '@/stores/groupStore';
 import { mockPlaylists } from '@/data/mockData';
 import { MovieCard } from '@/components/movie/MovieCard';
 import { Link } from 'react-router-dom';
@@ -25,18 +24,12 @@ export default function PlaylistsPage() {
   const [isPublic, setIsPublic] = useState(true);
   const [selectedPlaylist, setSelectedPlaylist] = useState<string | null>(null);
 
-  const { playlists, fetchPlaylists, createPlaylist } = useGroupStore();
-
-  useEffect(() => {
-    fetchPlaylists();
-  }, []);
-
   const displayPlaylists = mockPlaylists;
   const currentPlaylist = displayPlaylists.find(p => p.id === selectedPlaylist);
 
   const handleCreatePlaylist = async () => {
     if (!newPlaylistName.trim()) return;
-    await createPlaylist(newPlaylistName, newPlaylistDescription, isPublic);
+    // TODO: Implement create playlist functionality
     setShowCreateModal(false);
     setNewPlaylistName('');
     setNewPlaylistDescription('');

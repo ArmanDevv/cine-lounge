@@ -57,4 +57,60 @@ export const getAllMovies = async (req: Request, res: Response) => {
   }
 };
 
-export default { generateUploadUrl, createMovie, getAllMovies };
+// Update movie
+export const updateMovie = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { title, description, genre, thumbnailUrl, videoUrl } = req.body;
+
+    if (!title || !description || !genre || !thumbnailUrl || !videoUrl) {
+      return res.status(400).json({ message: 'Missing required movie fields' });
+    }
+
+    const movie = await Movie.findById(id);
+
+    if (!movie) {
+      return res.status(404).json({ message: 'Movie not found' });
+    }
+
+    // If video URL changed, delete the old video from S3
+    if (movie.videoUrl !== videoUrl) {
+      await s3Service.deleteFileFromS3(movie.videoUrl);
+    }
+
+    // Update the movie
+    const updatedMovie = await Movie.findByIdAndUpdate(
+      id,
+      { title, description, genre, thumbnailUrl, videoUrl },
+      { new: true }
+    ).populate('uploadedBy', 'username email');
+
+    return res.json(updatedMovie);
+  } catch (error) {
+    console.error('updateMovie error:', error);
+    return res.status(500).json({ message: 'Could not update movie' });
+  }
+};
+
+// Delete movie
+export const deleteMovie = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    const movie = await Movie.findByIdAndDelete(id);
+
+    if (!movie) {
+      return res.status(404).json({ message: 'Movie not found' });
+    }
+
+    // Delete the video from S3
+    await s3Service.deleteFileFromS3(movie.videoUrl);
+
+    return res.json({ message: 'Movie deleted successfully', movie });
+  } catch (error) {
+    console.error('deleteMovie error:', error);
+    return res.status(500).json({ message: 'Could not delete movie' });
+  }
+};
+
+export default { generateUploadUrl, createMovie, getAllMovies, updateMovie, deleteMovie };

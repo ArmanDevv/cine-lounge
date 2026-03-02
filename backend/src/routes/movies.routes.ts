@@ -7,7 +7,16 @@ const router = express.Router();
 // Get all movies - public endpoint
 router.get('/', async (req, res) => {
   try {
-    const movies = await Movie.find().populate('uploadedBy', 'username email');
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const skip = (page - 1) * limit;
+    
+    const movies = await Movie.find()
+      .populate('uploadedBy', 'username email')
+      .skip(skip)
+      .limit(limit);
+    
+    const total = await Movie.countDocuments();
     
     // Generate presigned URLs for each movie
     const moviesWithUrls = await Promise.all(
@@ -29,7 +38,13 @@ router.get('/', async (req, res) => {
       })
     );
     
-    return res.json(moviesWithUrls);
+    return res.json({
+      data: moviesWithUrls,
+      total,
+      page,
+      limit,
+      hasMore: skip + limit < total,
+    });
   } catch (error) {
     console.error('getMovies error:', error);
     return res.status(500).json({ message: 'Could not fetch movies' });

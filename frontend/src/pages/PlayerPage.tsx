@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { Users, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import api from '@/services/api';
+import { watchHistoryService } from '@/services/watchHistoryService';
 import videojs from 'video.js';
 import 'video.js/dist/video-js.css';
 
@@ -26,6 +27,7 @@ export default function PlayerPage() {
 
   const videoRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<any>(null);
+  const lastSaveTimeRef = useRef<number>(0);
 
   useEffect(() => {
     if (id) {
@@ -48,6 +50,8 @@ export default function PlayerPage() {
         console.log('Fixed Video URL:', videoUrl);
       }
       
+      
+
       // Create new movie object with corrected URL
       const movieData = { ...response.data, videoUrl };
       setMovie(movieData);
@@ -60,13 +64,13 @@ export default function PlayerPage() {
 
   // Initialize video.js player with built-in controls
   useEffect(() => {
-    if (!movie?.videoUrl || !videoRef.current) return;
+    if (!movie?.videoUrl || !videoRef.current) return; 
 
     // Wait for video element to be ready
     const videoElement = videoRef.current.querySelector('video');
     if (!videoElement) return;
 
-    // Initialize player with built-in controls
+    // Initialize playif  built-in controls
     const player = videojs(videoElement, {
       controls: true,
       autoplay: false,
@@ -92,10 +96,29 @@ export default function PlayerPage() {
 
     playerRef.current = player;
 
+    // Save watch progress every 10 seconds
+    const progressInterval = setInterval(() => {
+      if (player && movie?._id) {
+        const currentTime = player.currentTime();
+        const duration = player.duration();
+        
+        if (currentTime > 0 && duration > 0) {
+          const progress = Math.round((currentTime / duration) * 100);
+          
+          // Only save if progress changed or 30+ seconds since last save
+          if (Date.now() - lastSaveTimeRef.current > 30000) {
+            watchHistoryService.saveWatchProgress(movie._id, progress);
+            lastSaveTimeRef.current = Date.now();
+          }
+        }
+      }
+    }, 10000);
+
     return () => {
+      clearInterval(progressInterval);
       player.dispose();
     };
-  }, [movie?.videoUrl]);
+  }, [movie?.videoUrl, movie?._id]);
 
   if (loading) {
     return (
@@ -119,7 +142,7 @@ export default function PlayerPage() {
       <div className="max-w-6xl mx-auto px-4 pt-8 pb-12">
         <div className="relative bg-black rounded-lg overflow-hidden">
           <div className="absolute top-4 left-4 z-10 flex gap-2">
-            <Link to={`/movies/${movie._id}`}>
+            <Link to={`/movies/${movie._id}`}>-
               <Button variant="ghost" size="icon">
                 <ArrowLeft className="w-5 h-5" />
               </Button>

@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { Movie, MovieFilters, WatchHistory } from '@/types';
 import { movieService } from '@/services/movieService';
-import { mockWatchHistory } from '@/data/mockData';
+import { watchHistoryService } from '@/services/watchHistoryService';
 
 interface MovieState {
   movies: Movie[];
@@ -20,6 +20,7 @@ interface MovieState {
   fetchTrendingMovies: () => Promise<void>;
   fetchMovieById: (id: string) => Promise<void>;
   searchMovies: (query: string) => Promise<void>;
+  fetchWatchHistory: () => Promise<void>;
   setFilters: (filters: MovieFilters) => void;
   clearSearch: () => void;
 }
@@ -28,7 +29,7 @@ export const useMovieStore = create<MovieState>((set, get) => ({
   movies: [],
   featuredMovies: [],
   trendingMovies: [],
-  watchHistory: mockWatchHistory,
+  watchHistory: [],
   currentMovie: null,
   filters: {},
   isLoading: false,
@@ -40,7 +41,7 @@ export const useMovieStore = create<MovieState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const response = await movieService.getMovies(filters || get().filters);
-      set({ movies: response.data, isLoading: false });
+      set({ movies: Array.isArray(response) ? response : (response.data || []), isLoading: false });
     } catch (error: any) {
       set({ error: error.message, isLoading: false });
     }
@@ -85,6 +86,25 @@ export const useMovieStore = create<MovieState>((set, get) => ({
       set({ searchResults: results, isSearching: false });
     } catch (error) {
       set({ isSearching: false });
+    }
+  },
+
+  fetchWatchHistory: async () => {
+    try {
+      const history = await watchHistoryService.getWatchHistory();
+      set({ 
+        watchHistory: history.map(h => ({
+          id: h.movieId,
+          userId: '',
+          movieId: h.movieId,
+          movie: h.movie,
+          progress: h.progress,
+          lastWatched: h.lastWatched,
+        }))
+      });
+    } catch (error: any) {
+      console.error('Failed to fetch watch history:', error);
+      set({ watchHistory: [] });
     }
   },
 

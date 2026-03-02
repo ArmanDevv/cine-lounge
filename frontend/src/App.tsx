@@ -46,8 +46,8 @@ const App = () => (
             <Route path="/movies/:id" element={<MovieDetailsPage />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/playlists" element={<PlaylistsPage />} />
-            <Route path="/groups" element={<GroupsPage />} />
-            <Route path="/groups/:id" element={<GroupDetailPage />} />
+            <Route path="/groups" element={<ProtectedRoute><GroupsPage /></ProtectedRoute>} />
+            <Route path="/groups/:id" element={<ProtectedRoute><GroupDetailPage /></ProtectedRoute>} />
             <Route path="/watch-party" element={<WatchPartyPage />} />
             <Route path="/watch-party/:groupId" element={<WatchPartyPage />} />
             <Route path="/admin" element={<ProtectedRoute requireAdmin><AdminDashboard /></ProtectedRoute>} />

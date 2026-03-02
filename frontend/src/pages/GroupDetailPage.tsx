@@ -1,64 +1,116 @@
 import { useState, useEffect, useRef } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { 
-  Send, 
-  Smile, 
-  Paperclip, 
-  Settings, 
-  Users, 
+import {
+  Send,
+  Smile,
+  Settings,
+  Users,
   Tv,
-  Calendar,
   Copy,
-  Crown,
-  Shield
+  Plus,
+  Trash2,
+  Play,
+  Loader2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import { useGroupStore } from '@/stores/groupStore';
-import { mockGroups, mockChatMessages, mockScheduledWatches } from '@/data/mockData';
+import { useAuthStore } from '@/stores/authStore';
 import { useToast } from '@/hooks/use-toast';
-import { Link } from 'react-router-dom';
+import { socketClient } from '@/services/socketClient';
+import { movieService } from '@/services/movieService';
+import { Group } from '@/services/groupService';
+import { Movie } from '@/types';
+
 
 export default function GroupDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const [message, setMessage] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
+  const [messageText, setMessageText] = useState('');
+  const [isLoadingMovies, setIsLoadingMovies] = useState(false);
+  const [availableMovies, setAvailableMovies] = useState<Movie[]>([]);
+  const [showMovieDialog, setShowMovieDialog] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  const { user } = useAuthStore();
 
-  const { messages, fetchMessages, sendMessage, fetchScheduledWatches, scheduledWatches } = useGroupStore();
+  const {
+    currentGroup,
+    messages,
+    isLoading,
+    error,
+    fetchGroupById,
+    addMessage,
+    addToPlaylist,
+    removeFromPlaylist,
+    setCurrentGroup,
+  } = useGroupStore();
 
-  const group = mockGroups.find((g) => g.id === id);
-  const chatMessages = mockChatMessages;
-  const schedules = mockScheduledWatches;
+  // Auto scroll to bottom when messages update
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
 
   useEffect(() => {
     if (id) {
-      fetchMessages(id);
-      fetchScheduledWatches(id);
+      fetchGroupById(id);
     }
-  }, [id]);
+  }, [id, fetchGroupById]);
+
+  // Socket.IO setup
+  useEffect(() => {
+    if (!id || !user) return;
+
+    socketClient.connect();
+    socketClient.emit('join_group', id, user._id);
+
+    // Listen for incoming messages
+    socketClient.on('receive_message', (data) => {
+      const newMessage: Group['messages'][0] = {
+        senderId: { _id: data.userId, username: data.username, avatar: data.avatar },
+        message: data.message,
+        createdAt: data.timestamp,
+      };
+      addMessage(newMessage);
+    });
+
+    // Cleanup on unmount
+    return () => {
+      socketClient.emit('leave_group', id);
+      socketClient.off('receive_message');
+    };
+  }, [id, user, addMessage]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [chatMessages]);
-
   const handleSendMessage = () => {
-    if (!message.trim() || !id) return;
-    sendMessage(id, message);
-    setMessage('');
+    if (!messageText.trim() || !id || !user || !currentGroup) return;
+
+    socketClient.emit('send_message', {
+      groupId: id,
+      message: messageText,
+      userId: user._id,
+      username: user.username,
+      avatar: user.avatar,
+    });
+
+    setMessageText('');
   };
 
   const copyInviteCode = () => {
-    if (group) {
-      navigator.clipboard.writeText(group.inviteCode);
+    if (currentGroup) {
+      navigator.clipboard.writeText(currentGroup.inviteCode);
       toast({
         title: 'Copied!',
         description: 'Invite code copied to clipboard',
@@ -66,18 +118,77 @@ export default function GroupDetailPage() {
     }
   };
 
-  const getRoleBadge = (role: string) => {
-    switch (role) {
-      case 'owner':
-        return <Crown className="w-4 h-4 text-yellow-500" />;
-      case 'admin':
-        return <Shield className="w-4 h-4 text-blue-500" />;
-      default:
-        return null;
+  const handleAddMovie = async (movieId: string) => {
+    if (!id) return;
+    try {
+      await addToPlaylist(id, movieId);
+      if (currentGroup) {
+        socketClient.emit('playlist_updated', { groupId: id });
+      }
+      setShowMovieDialog(false);
+      toast({
+        title: 'Success',
+        description: 'Movie added to playlist',
+      });
+    } catch (err) {
+      toast({
+        title: 'Error',
+        description: 'Failed to add movie to playlist',
+        variant: 'destructive',
+      });
     }
   };
 
-  if (!group) {
+  const handleRemoveMovie = async (movieId: string) => {
+    if (!id) return;
+    try {
+      await removeFromPlaylist(id, movieId);
+      if (currentGroup) {
+        socketClient.emit('playlist_updated', { groupId: id });
+      }
+      toast({
+        title: 'Success',
+        description: 'Movie removed from playlist',
+      });
+    } catch (err) {
+      toast({
+        title: 'Error',
+        description: 'Failed to remove movie from playlist',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const fetchAvailableMovies = async () => {
+    setIsLoadingMovies(true);
+    try {
+      const response = await movieService.getMovies();
+      setAvailableMovies(response.data || []);
+    } catch (err) {
+      toast({
+        title: 'Error',
+        description: 'Failed to load movies',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoadingMovies(false);
+    }
+  };
+
+  const handleOpenMovieDialog = () => {
+    fetchAvailableMovies();
+    setShowMovieDialog(true);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen pt-20 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!currentGroup) {
     return (
       <div className="min-h-screen pt-20 flex items-center justify-center">
         <p className="text-muted-foreground">Group not found</p>
@@ -93,25 +204,21 @@ export default function GroupDetailPage() {
           {/* Group Header */}
           <div className="glass-panel border-b border-border p-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <img
-                src={group.avatar}
-                alt={group.name}
-                className="w-10 h-10 rounded-lg object-cover"
-              />
+              <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center font-semibold">
+                {currentGroup.name.substring(0, 2).toUpperCase()}
+              </div>
               <div>
-                <h2 className="font-semibold">{group.name}</h2>
+                <h2 className="font-semibold">{currentGroup.name}</h2>
                 <p className="text-xs text-muted-foreground">
-                  {group.members.length} members • {group.members.filter(m => m.user.isOnline).length} online
+                  {currentGroup.members.length} members
                 </p>
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Link to={`/watch-party/${group.id}`}>
-                <Button variant="outline" size="sm">
-                  <Tv className="w-4 h-4 mr-2" />
-                  Watch Party
-                </Button>
-              </Link>
+              <Button variant="outline" size="sm">
+                <Tv className="w-4 h-4 mr-2" />
+                Watch Party
+              </Button>
               <Button variant="ghost" size="icon">
                 <Settings className="w-5 h-5" />
               </Button>
@@ -121,76 +228,72 @@ export default function GroupDetailPage() {
           {/* Messages */}
           <ScrollArea className="flex-1 p-4">
             <div className="space-y-4">
-              {chatMessages.map((msg, index) => {
-                const isOwnMessage = msg.senderId === '1';
-                return (
-                  <motion.div
-                    key={msg.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.05 }}
-                    className={`flex gap-3 ${isOwnMessage ? 'flex-row-reverse' : ''}`}
-                  >
-                    <img
-                      src={msg.sender.avatar}
-                      alt={msg.sender.username}
-                      className="w-8 h-8 rounded-full flex-shrink-0"
-                    />
-                    <div className={`max-w-md ${isOwnMessage ? 'text-right' : ''}`}>
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-sm font-medium">{msg.sender.username}</span>
-                        <span className="text-xs text-muted-foreground">
-                          {new Date(msg.timestamp).toLocaleTimeString([], { 
-                            hour: '2-digit', 
-                            minute: '2-digit' 
-                          })}
-                        </span>
+              {messages.length === 0 ? (
+                <div className="flex items-center justify-center h-full text-muted-foreground">
+                  No messages yet
+                </div>
+              ) : (
+                messages.map((msg, index) => {
+                  const isOwnMessage = msg.senderId._id === user?._id;
+                  return (
+                    <motion.div
+                      key={`${msg.senderId._id}-${msg.createdAt}-${index}`}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                      className={`flex gap-3 ${isOwnMessage ? 'flex-row-reverse' : ''}`}
+                    >
+                      <img
+                        src={msg.senderId.avatar}
+                        alt={msg.senderId.username}
+                        className="w-8 h-8 rounded-full flex-shrink-0"
+                      />
+                      <div className={`max-w-md ${isOwnMessage ? 'text-right' : ''}`}>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-sm font-medium">{msg.senderId.username}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {new Date(msg.createdAt).toLocaleTimeString([], {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })}
+                          </span>
+                        </div>
+                        <div
+                          className={`rounded-2xl px-4 py-2 ${
+                            isOwnMessage
+                              ? 'bg-primary text-primary-foreground rounded-tr-sm'
+                              : 'bg-secondary rounded-tl-sm'
+                          }`}
+                        >
+                          <p className="text-sm">{msg.message}</p>
+                        </div>
                       </div>
-                      <div
-                        className={`rounded-2xl px-4 py-2 ${
-                          isOwnMessage
-                            ? 'bg-primary text-primary-foreground rounded-tr-sm'
-                            : 'bg-secondary rounded-tl-sm'
-                        }`}
-                      >
-                        <p className="text-sm">{msg.content}</p>
-                      </div>
-                    </div>
-                  </motion.div>
-                );
-              })}
+                    </motion.div>
+                  );
+                })
+              )}
               <div ref={messagesEndRef} />
             </div>
           </ScrollArea>
 
-          {/* Typing Indicator */}
-          {isTyping && (
-            <div className="px-4 py-2 text-sm text-muted-foreground">
-              Someone is typing...
-            </div>
-          )}
-
           {/* Message Input */}
           <div className="p-4 border-t border-border">
             <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon">
-                <Paperclip className="w-5 h-5" />
-              </Button>
               <Input
                 placeholder="Type a message..."
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
+                value={messageText}
+                onChange={(e) => setMessageText(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
                 className="flex-1 bg-secondary/50"
               />
               <Button variant="ghost" size="icon">
                 <Smile className="w-5 h-5" />
               </Button>
-              <Button 
-                size="icon" 
+              <Button
+                size="icon"
                 className="btn-cinema"
                 onClick={handleSendMessage}
-                disabled={!message.trim()}
+                disabled={!messageText.trim()}
               >
                 <Send className="w-4 h-4" />
               </Button>
@@ -199,126 +302,182 @@ export default function GroupDetailPage() {
         </div>
 
         {/* Right Sidebar */}
-        <div className="w-72 border-l border-border bg-card hidden lg:block">
-          <Tabs defaultValue="members" className="h-full flex flex-col">
-            <TabsList className="w-full justify-start px-2 pt-2 bg-transparent">
+        <div className="w-80 border-l border-border bg-card hidden lg:block flex flex-col">
+          <Tabs defaultValue="playlist" className="flex-1 flex flex-col">
+            <TabsList className="w-full justify-start px-2 pt-2 bg-transparent border-b">
+              <TabsTrigger value="playlist" className="flex items-center gap-1">
+                <Tv className="w-4 h-4" />
+                Playlist
+              </TabsTrigger>
               <TabsTrigger value="members" className="flex items-center gap-1">
                 <Users className="w-4 h-4" />
                 Members
               </TabsTrigger>
-              <TabsTrigger value="schedule" className="flex items-center gap-1">
-                <Calendar className="w-4 h-4" />
-                Schedule
-              </TabsTrigger>
             </TabsList>
 
+            {/* Playlist Tab */}
+            <TabsContent value="playlist" className="flex-1 p-4 overflow-y-auto">
+              <div className="mb-4">
+                <Dialog open={showMovieDialog} onOpenChange={setShowMovieDialog}>
+                  <DialogTrigger asChild>
+                    <Button onClick={handleOpenMovieDialog} className="w-full btn-cinema">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add Movie
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-h-[80vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle>Add Movie to Playlist</DialogTitle>
+                    </DialogHeader>
+                    {isLoadingMovies ? (
+                      <div className="flex items-center justify-center py-8">
+                        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-2 gap-4">
+                        {availableMovies.map((movie) => (
+                          <div
+                            key={movie._id}
+                            className="cursor-pointer group"
+                            onClick={() => handleAddMovie(movie._id)}
+                          >
+                            <div className="relative mb-2 overflow-hidden rounded-lg">
+                              <img
+                                src={movie.thumbnailUrl || ''}
+                                alt={movie.title}
+                                className="w-full h-32 object-cover group-hover:scale-105 transition-transform"
+                              />
+                              <div className="absolute inset-0 bg-black/40 group-hover:bg-black/60 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                                <Plus className="w-6 h-6 text-white" />
+                              </div>
+                            </div>
+                            <h4 className="text-sm font-medium line-clamp-2">
+                              {movie.title}
+                            </h4>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </DialogContent>
+                </Dialog>
+              </div>
+
+              { /* filter out any playlist entries where the movie was removed/deleted */ }
+              {currentGroup.playlist &&
+              currentGroup.playlist.filter((i) => i.movieId).length > 0 ? (
+                (() => {
+                  const validPlaylist = currentGroup.playlist.filter((i) => i.movieId);
+                  return (
+                    <div className="space-y-3">
+                      {validPlaylist.map((item) => (
+                        <div
+                          key={item.movieId?._id ?? item.addedAt}
+                          className="glass-panel rounded-lg p-3"
+                        >
+                          <div className="flex gap-3">
+                            <img
+                              src={item.movieId?.thumbnailUrl ?? ''}
+                              alt={item.movieId?.title ?? 'Unknown movie'}
+                              className="w-12 h-16 object-cover rounded flex-shrink-0"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-medium text-sm line-clamp-1">
+                                {item.movieId?.title ?? 'Unknown movie'}
+                              </h4>
+                              <p className="text-xs text-muted-foreground">
+                                {item.movieId?.genre ?? ''}
+                              </p>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                Added by {item.addedBy.username}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex gap-2 mt-3">
+                            {item.movieId?._id && (
+                              <Link
+                                to={`/player/${item.movieId._id}`}
+                                className="flex-1"
+                              >
+                                <Button size="sm" variant="outline" className="w-full">
+                                  <Play className="w-3 h-3 mr-1" />
+                                  Watch
+                                </Button>
+                              </Link>
+                            )}
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() =>
+                                item.movieId?._id && handleRemoveMovie(item.movieId._id)
+                              }
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()
+              ) : (
+                <div className="flex flex-col items-center justify-center py-8 text-center">
+                  <Tv className="w-8 h-8 text-muted-foreground mb-2" />
+                  <p className="text-sm text-muted-foreground">No movies in playlist yet</p>
+                </div>
+              )}
+            </TabsContent>
+
             {/* Members Tab */}
-            <TabsContent value="members" className="flex-1 p-4">
+            <TabsContent value="members" className="flex-1 p-4 overflow-y-auto">
               {/* Invite Section */}
               <div className="mb-4 p-3 bg-secondary/50 rounded-lg">
                 <p className="text-xs text-muted-foreground mb-2">Invite Code</p>
                 <div className="flex items-center gap-2">
-                  <code className="flex-1 text-sm font-mono">{group.inviteCode}</code>
+                  <code className="flex-1 text-sm font-mono">{currentGroup.inviteCode}</code>
                   <Button variant="ghost" size="icon" onClick={copyInviteCode}>
                     <Copy className="w-4 h-4" />
                   </Button>
                 </div>
               </div>
 
-              {/* Online Members */}
-              <div className="mb-4">
-                <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">
-                  Online — {group.members.filter(m => m.user.isOnline).length}
-                </p>
-                <div className="space-y-2">
-                  {group.members
-                    .filter((m) => m.user.isOnline)
-                    .map((member) => (
-                      <div
-                        key={member.user.id}
-                        className="flex items-center gap-3 p-2 rounded-lg hover:bg-accent transition-colors"
-                      >
-                        <div className="relative">
-                          <img
-                            src={member.user.avatar}
-                            alt={member.user.username}
-                            className="w-8 h-8 rounded-full"
-                          />
-                          <span className="absolute -bottom-0.5 -right-0.5 online-indicator" />
-                        </div>
-                        <span className="text-sm flex-1">{member.user.username}</span>
-                        {getRoleBadge(member.role)}
-                      </div>
-                    ))}
-                </div>
-              </div>
-
-              {/* Offline Members */}
+              {/* Members List */}
               <div>
-                <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">
-                  Offline — {group.members.filter(m => !m.user.isOnline).length}
-                </p>
-                <div className="space-y-2">
-                  {group.members
-                    .filter((m) => !m.user.isOnline)
-                    .map((member) => (
-                      <div
-                        key={member.user.id}
-                        className="flex items-center gap-3 p-2 rounded-lg hover:bg-accent transition-colors opacity-60"
-                      >
-                        <div className="relative">
-                          <img
-                            src={member.user.avatar}
-                            alt={member.user.username}
-                            className="w-8 h-8 rounded-full"
-                          />
-                          <span className="absolute -bottom-0.5 -right-0.5 offline-indicator" />
-                        </div>
-                        <span className="text-sm flex-1">{member.user.username}</span>
-                        {getRoleBadge(member.role)}
+                {/* dedupe in case backend returned duplicate entries */}
+                {(() => {
+                  const uniqueMembers = currentGroup.members.filter(
+                    (m, idx, arr) =>
+                      arr.findIndex(x => x.userId._id === m.userId._id) === idx
+                  );
+                  return (
+                    <>
+                      <p className="text-xs text-muted-foreground uppercase tracking-wider mb-3">
+                        Members ({uniqueMembers.length})
+                      </p>
+                      <div className="space-y-2">
+                        {uniqueMembers.map((member) => (
+                          <div
+                            key={member.userId._id}
+                            className="flex items-center gap-3 p-2 rounded-lg hover:bg-accent transition-colors"
+                          >
+                            <img
+                              src={member.userId.avatar}
+                              alt={member.userId.username}
+                              className="w-8 h-8 rounded-full flex-shrink-0"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium truncate">
+                                {member.userId.username}
+                              </p>
+                              {currentGroup.createdBy._id === member.userId._id && (
+                                <p className="text-xs text-muted-foreground">Creator</p>
+                              )}
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                </div>
-              </div>
-            </TabsContent>
-
-            {/* Schedule Tab */}
-            <TabsContent value="schedule" className="flex-1 p-4">
-              <div className="space-y-4">
-                {schedules.map((schedule) => (
-                  <div key={schedule.id} className="glass-panel rounded-lg p-3">
-                    <div className="flex gap-3">
-                      <img
-                        src={schedule.movie.poster}
-                        alt={schedule.movie.title}
-                        className="w-12 h-16 object-cover rounded"
-                      />
-                      <div className="flex-1">
-                        <h4 className="font-medium text-sm line-clamp-1">
-                          {schedule.movie.title}
-                        </h4>
-                        <p className="text-xs text-muted-foreground">
-                          {new Date(schedule.scheduledAt).toLocaleDateString()}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {new Date(schedule.scheduledAt).toLocaleTimeString([], {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          })}
-                        </p>
-                        <div className="flex items-center gap-1 mt-1">
-                          <Users className="w-3 h-3 text-muted-foreground" />
-                          <span className="text-xs text-muted-foreground">
-                            {schedule.rsvpUsers.length} attending
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                    <Button size="sm" className="w-full mt-3" variant="outline">
-                      RSVP
-                    </Button>
-                  </div>
-                ))}
+                    </>
+                  );
+                })()}
               </div>
             </TabsContent>
           </Tabs>
