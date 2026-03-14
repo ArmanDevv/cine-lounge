@@ -13,7 +13,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { mockPlaylists } from '@/data/mockData';
+import { usePlaylistStore } from '@/stores/playlistStore';
 import { MovieCard } from '@/components/movie/MovieCard';
 import { Link } from 'react-router-dom';
 
@@ -24,16 +24,22 @@ export default function PlaylistsPage() {
   const [isPublic, setIsPublic] = useState(true);
   const [selectedPlaylist, setSelectedPlaylist] = useState<string | null>(null);
 
-  const displayPlaylists = mockPlaylists;
+  const { playlists, loadPlaylists, createPlaylist, deletePlaylist } = usePlaylistStore();
+  const displayPlaylists = playlists;
   const currentPlaylist = displayPlaylists.find(p => p.id === selectedPlaylist);
+
+  useEffect(() => {
+    loadPlaylists();
+  }, []);
 
   const handleCreatePlaylist = async () => {
     if (!newPlaylistName.trim()) return;
-    // TODO: Implement create playlist functionality
+    const created = createPlaylist({ name: newPlaylistName.trim(), description: newPlaylistDescription.trim(), isPublic });
     setShowCreateModal(false);
     setNewPlaylistName('');
     setNewPlaylistDescription('');
     setIsPublic(true);
+    setSelectedPlaylist(created.id);
   };
 
   return (
@@ -141,6 +147,14 @@ export default function PlaylistsPage() {
                       <span className="text-xs text-muted-foreground">
                         {playlist.isPublic ? 'Public' : 'Private'}
                       </span>
+                    </div>
+                    <div className="mt-2 flex gap-2">
+                      <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); setSelectedPlaylist(playlist.id); }}>
+                        View
+                      </Button>
+                      <Button size="sm" variant="outline" className="text-destructive" onClick={(e) => { e.stopPropagation(); if (confirm('Delete this playlist?')) deletePlaylist(playlist.id); }}>
+                        Delete
+                      </Button>
                     </div>
                   </div>
                 </div>

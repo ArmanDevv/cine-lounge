@@ -21,6 +21,8 @@ import PlaylistsPage from "./pages/PlaylistsPage";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminMoviesPage from "./pages/AdminMoviesPage";
 import AdminUsersPage from "./pages/AdminUsersPage";
+import PricingPage from "./pages/PricingPage";
+import CheckoutPage from "./pages/CheckoutPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -50,6 +52,8 @@ const App = () => (
             <Route path="/groups/:id" element={<ProtectedRoute><GroupDetailPage /></ProtectedRoute>} />
             <Route path="/watch-party" element={<WatchPartyPage />} />
             <Route path="/watch-party/:groupId" element={<WatchPartyPage />} />
+            <Route path="/pricing" element={<PricingPage />} />
+            <Route path="/checkout" element={<CheckoutPage />} />
             <Route path="/admin" element={<ProtectedRoute requireAdmin><AdminDashboard /></ProtectedRoute>} />
             <Route path="/admin/movies" element={<ProtectedRoute requireAdmin><AdminMoviesPage /></ProtectedRoute>} />
             <Route path="/admin/users" element={<ProtectedRoute requireAdmin><AdminUsersPage /></ProtectedRoute>} />

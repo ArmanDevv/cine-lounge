@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Users, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -7,6 +8,8 @@ import api from '@/services/api';
 import { watchHistoryService } from '@/services/watchHistoryService';
 import videojs from 'video.js';
 import 'video.js/dist/video-js.css';
+import { useAuthStore } from '@/stores/authStore';
+import { useToast } from '@/hooks/use-toast';
 
 interface Movie {
   _id: string;
@@ -24,6 +27,10 @@ export default function PlayerPage() {
   const [movie, setMovie] = useState<Movie | null>(null);
   const [loading, setLoading] = useState(true);
   const [isWatchParty, setIsWatchParty] = useState(false);
+
+  const navigate = useNavigate();
+  const { user } = useAuthStore();
+  const { toast } = useToast();
 
   const videoRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<any>(null);
@@ -114,8 +121,30 @@ export default function PlayerPage() {
       }
     }, 10000);
 
+    // Enforce 1-minute free watch limit for non-active subscriptions
+    const freeLimitSeconds = 60;
+    const checkInterval = setInterval(() => {
+      try {
+        if (!player) return;
+        const current = Math.floor(player.currentTime());
+        const isActive = user?.subscription?.status === 'active';
+        if (!isActive && current >= freeLimitSeconds) {
+          player.pause();
+          toast({
+            title: 'Upgrade required',
+            description: 'Free users can watch 1 minute only. Upgrade to continue.',
+            variant: 'destructive',
+          });
+          navigate('/pricing');
+        }
+      } catch (e) {
+        // ignore
+      }
+    }, 1000);
+
     return () => {
       clearInterval(progressInterval);
+      clearInterval(checkInterval);
       player.dispose();
     };
   }, [movie?.videoUrl, movie?._id]);

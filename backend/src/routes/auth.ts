@@ -9,6 +9,7 @@ const router = express.Router();
 // Register
 router.post('/register', async (req, res) => {
   try {
+    console.log('Register endpoint hit. Body:', req.body);
     const { username, email, password } = req.body;
 
     // Validate input
@@ -65,12 +66,13 @@ router.post('/register', async (req, res) => {
         role: user.role,
         isOnline: user.isOnline,
         createdAt: user.createdAt,
+        subscription: user.subscription,
       },
       token,
     });
   } catch (error: any) {
     console.error('Registration error:', error);
-    res.status(500).json({ message: error.message || 'Server error' });
+    res.status(500).json({ message: error.message || 'Server error', stack: error.stack });
   }
 });
 
@@ -114,6 +116,7 @@ router.post('/login', async (req, res) => {
         role: user.role,
         isOnline: user.isOnline,
         createdAt: user.createdAt,
+        subscription: user.subscription,
       },
       token,
     });
@@ -158,6 +161,7 @@ router.get('/me', async (req, res) => {
       role: user.role,
       isOnline: user.isOnline,
       createdAt: user.createdAt,
+      subscription: user.subscription,
     });
   } catch (error) {
     res.status(401).json({ message: 'Invalid token' });

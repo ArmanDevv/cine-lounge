@@ -27,6 +27,7 @@ import { useMovieStore } from '@/stores/movieStore';
 const navLinks = [
   { href: '/', label: 'Home' },
   { href: '/movies', label: 'Movies' },
+  { href: '/pricing', label: 'Pricing' },
   { href: '/playlists', label: 'My Playlists' },
   { href: '/groups', label: 'Groups' },
 ];

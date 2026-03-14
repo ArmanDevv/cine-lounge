@@ -11,6 +11,7 @@ import authRoutes from './routes/auth';
 import adminRoutes from './routes/admin.routes';
 import moviesRoutes from './routes/movies.routes';
 import groupRoutes from './routes/group.routes';
+import subscriptionsRoutes from './routes/subscriptions';
 
 const app = express();
 const httpServer = createServer(app);
@@ -37,6 +38,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/movies', moviesRoutes);
 app.use('/api/groups', groupRoutes);
+app.use('/api/subscriptions', subscriptionsRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

@@ -32,7 +32,7 @@ api.interceptors.response.use(
     return response;
   },
   (error) => {
-    console.log('API Error:', error.response?.status, error.config?.url, error.message);
+    console.log('API Error:', error.response?.status, error.config?.url, error.message, error.response?.data);
     if (error.response?.status === 401) {
       // Handle unauthorized - redirect to login
       localStorage.removeItem('auth_token');

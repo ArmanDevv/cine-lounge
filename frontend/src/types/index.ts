@@ -8,6 +8,11 @@ export interface User {
   bio?: string;
   role: 'user' | 'admin' | 'moderator';
   isOnline: boolean;
+  subscription?: {
+    plan: string;
+    status: 'free' | 'active' | 'cancelled';
+    expiresAt?: string;
+  };
   createdAt: string;
 }
 

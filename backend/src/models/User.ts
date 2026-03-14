@@ -8,6 +8,11 @@ export interface IUser extends Document {
   bio?: string;
   role: 'user' | 'admin' | 'moderator';
   isOnline: boolean;
+  subscription?: {
+    plan: string;
+    status: 'free' | 'active' | 'cancelled';
+    expiresAt?: Date;
+  };
   watchHistory: Array<{
     movieId: mongoose.Types.ObjectId;
     progress: number;
@@ -49,6 +54,11 @@ const userSchema = new mongoose.Schema({
   isOnline: {
     type: Boolean,
     default: false,
+  },
+  subscription: {
+    plan: { type: String, default: 'free' },
+    status: { type: String, enum: ['free', 'active', 'cancelled'], default: 'free' },
+    expiresAt: { type: Date },
   },
   watchHistory: [
     {

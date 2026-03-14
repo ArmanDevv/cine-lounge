@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { 
   User, 
@@ -17,21 +17,63 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { MovieCard } from '@/components/movie/MovieCard';
 import { useAuthStore } from '@/stores/authStore';
-import { mockWatchHistory, mockPlaylists, mockMovies } from '@/data/mockData';
+import { useMovieStore } from '@/stores/movieStore';
+import { subscriptionService } from '@/services/subscriptionService';
+import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
+import { mockMovies } from '@/data/mockData';
+import { usePlaylistStore } from '@/stores/playlistStore';
 
 export default function ProfilePage() {
-  const { user, logout } = useAuthStore();
+  const { user, logout, setUser } = useAuthStore();
   const [isEditing, setIsEditing] = useState(false);
   const [username, setUsername] = useState(user?.username || '');
   const [bio, setBio] = useState(user?.bio || '');
-
-  const watchHistory = mockWatchHistory;
-  const playlists = mockPlaylists.filter(p => p.ownerId === user?.id);
+  const { watchHistory, fetchWatchHistory } = useMovieStore();
+  const { playlists: allPlaylists, loadPlaylists } = usePlaylistStore();
+  const playlists = allPlaylists.filter(p => p.ownerId === user?.id);
   const favoriteMovies = mockMovies.slice(0, 4);
+
+  useEffect(() => {
+    fetchWatchHistory();
+    loadPlaylists();
+  }, []);
 
   const handleSave = () => {
     // Save profile changes
     setIsEditing(false);
+  };
+
+  const { toast } = useToast();
+  const navigate = useNavigate();
+
+  const handleCancelSubscription = async () => {
+    if (!user) return;
+    const ok = window.confirm('Are you sure you want to cancel your subscription?');
+    if (!ok) return;
+    try {
+      const res = await subscriptionService.cancelSubscription();
+      toast({ title: 'Subscription cancelled', description: res.message });
+      setUser({ ...user, subscription: res.subscription });
+    } catch (err: any) {
+      toast({ title: 'Cancel failed', description: err?.message || 'Could not cancel subscription', variant: 'destructive' });
+    }
+  };
+
+  const handleManageSubscription = () => {
+    const planId = user?.subscription?.plan || 'premium';
+    if (planId === 'free') {
+      navigate('/pricing');
+      return;
+    }
+
+    if (!user?.subscription || user.subscription.status !== 'active') {
+      // Redirect to checkout for selected plan
+      navigate(`/checkout?plan=${planId}`);
+    } else {
+      // Active subscription - offer cancel
+      handleCancelSubscription();
+    }
   };
 
   return (
@@ -108,6 +150,12 @@ export default function ProfilePage() {
                     >
                       <Edit2 className="w-4 h-4" />
                     </Button>
+                    <Button
+                      className="ml-2"
+                      onClick={handleManageSubscription}
+                    >
+                      {user?.subscription && user.subscription.status === 'active' ? 'Manage Subscription' : 'Upgrade'}
+                    </Button>
                   </div>
                   <p className="text-muted-foreground mb-4">
                     {user?.bio || 'No bio yet. Click edit to add one!'}
@@ -118,6 +166,20 @@ export default function ProfilePage() {
                     <span className="flex items-center gap-1">
                       <Clock className="w-4 h-4" />
                       {watchHistory.length} movies watched
+                    </span>
+                    <span>•</span>
+                    <span className="flex items-center gap-2">
+                      <strong className="text-foreground">Subscription:</strong>
+                      {user?.subscription ? (
+                        <span className="text-sm">
+                          {user.subscription.plan} — {user.subscription.status}{' '}
+                          {user.subscription.expiresAt ? (
+                            <span className="text-muted-foreground">(expires {new Date(user.subscription.expiresAt).toLocaleDateString()})</span>
+                          ) : null}
+                        </span>
+                      ) : (
+                        <span className="text-sm text-muted-foreground">Free</span>
+                      )}
                     </span>
                   </div>
                 </>
