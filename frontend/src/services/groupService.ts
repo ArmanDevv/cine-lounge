@@ -100,4 +100,14 @@ export const groupService = {
     const response = await api.delete<{ message: string }>(`/groups/${groupId}`);
     return response.data;
   },
+
+  async getAgoraToken(groupId: string) {
+    const response = await api.get<{
+      token: string;
+      appId: string;
+      channelId: string;
+      userId: string;
+    }>(`/groups/${groupId}/agora-token`);
+    return response.data;
+  },
 };

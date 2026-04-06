@@ -4,15 +4,21 @@ import { io, Socket } from 'socket.io-client';
 class SocketClient {
   private socket: Socket | null = null;
   private listeners: Map<string, Set<(...args: any[]) => void>> = new Map();
+  private isConnecting: boolean = false;
 
   connect() {
-    if (this.socket?.connected) return;
+    if (this.socket?.connected || this.isConnecting) return;
 
+    this.isConnecting = true;
     const socketUrl = import.meta.env.VITE_SOCKET_URL || 'http://localhost:3001';
     
     this.socket = io(socketUrl, {
-      autoConnect: false,
+      autoConnect: true,
       transports: ['websocket', 'polling'],
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      reconnectionAttempts: 5,
       auth: {
         token: localStorage.getItem('auth_token'),
       },
@@ -20,18 +26,23 @@ class SocketClient {
 
     this.socket.on('connect', () => {
       console.log('Socket connected:', this.socket?.id);
+      this.isConnecting = false;
     });
 
     this.socket.on('disconnect', (reason) => {
       console.log('Socket disconnected:', reason);
+      this.isConnecting = false;
     });
 
     this.socket.on('error', (error) => {
       console.error('Socket error:', error);
+      this.isConnecting = false;
     });
 
-    // Mock connection for demo purposes
-    // this.socket.connect();
+    this.socket.on('connect_error', (error) => {
+      console.error('Socket connection error:', error);
+      this.isConnecting = false;
+    });
   }
 
   disconnect() {
@@ -65,28 +76,32 @@ class SocketClient {
   }
 
   // Watch party events
-  joinWatchParty(partyId: string) {
-    this.socket?.emit('join_watch_party', { partyId });
+  onWatchPartyStart(callback: (data: any) => void) {
+    this.socket?.on('watch_party_started', callback);
   }
 
-  leaveWatchParty(partyId: string) {
-    this.socket?.emit('leave_watch_party', { partyId });
+  onWatchPartyJoin(callback: (data: any) => void) {
+    this.socket?.on('watch_party_member_joined', callback);
   }
 
-  syncPlayback(partyId: string, currentTime: number, isPlaying: boolean) {
-    this.socket?.emit('sync_playback', { partyId, currentTime, isPlaying });
+  onWatchPartyLeave(callback: (data: any) => void) {
+    this.socket?.on('watch_party_member_left', callback);
   }
 
-  onPlaybackSync(callback: (data: { currentTime: number; isPlaying: boolean }) => void) {
-    this.socket?.on('playback_sync', callback);
+  onWatchPartyPlaySync(callback: (data: any) => void) {
+    this.socket?.on('watch_party_play', callback);
   }
 
-  onParticipantJoined(callback: (user: any) => void) {
-    this.socket?.on('participant_joined', callback);
+  onWatchPartyPauseSync(callback: (data: any) => void) {
+    this.socket?.on('watch_party_pause', callback);
   }
 
-  onParticipantLeft(callback: (userId: string) => void) {
-    this.socket?.on('participant_left', callback);
+  onWatchPartySeekSync(callback: (data: any) => void) {
+    this.socket?.on('watch_party_seek', callback);
+  }
+
+  onWatchPartyEnd(callback: () => void) {
+    this.socket?.on('watch_party_ended', callback);
   }
 
   // User presence

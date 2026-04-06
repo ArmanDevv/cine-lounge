@@ -26,11 +26,14 @@ import {
 } from '@/components/ui/dialog';
 import { useGroupStore } from '@/stores/groupStore';
 import { useAuthStore } from '@/stores/authStore';
+import { useWatchPartyStore } from '@/stores/watchPartyStore';
 import { useToast } from '@/hooks/use-toast';
 import { socketClient } from '@/services/socketClient';
 import { movieService } from '@/services/movieService';
 import { Group } from '@/services/groupService';
 import { Movie } from '@/types';
+import WatchPartyModal from '@/components/WatchPartyModal';
+import WatchPartyPlayer from '@/components/WatchPartyPlayer';
 
 
 export default function GroupDetailPage() {
@@ -39,6 +42,9 @@ export default function GroupDetailPage() {
   const [isLoadingMovies, setIsLoadingMovies] = useState(false);
   const [availableMovies, setAvailableMovies] = useState<Movie[]>([]);
   const [showMovieDialog, setShowMovieDialog] = useState(false);
+  const [showWatchPartyModal, setShowWatchPartyModal] = useState(false);
+  const [showWatchPartyPlayer, setShowWatchPartyPlayer] = useState(false);
+  const [activeWatchParty, setActiveWatchParty] = useState<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const { user } = useAuthStore();
@@ -70,42 +76,202 @@ export default function GroupDetailPage() {
   useEffect(() => {
     if (!id || !user) return;
 
-    socketClient.connect();
-    socketClient.emit('join_group', id, user._id);
+    try {
+      // Ensure socket client is connected
+      socketClient.connect();
 
-    // Listen for incoming messages
-    socketClient.on('receive_message', (data) => {
-      const newMessage: Group['messages'][0] = {
-        senderId: { _id: data.userId, username: data.username, avatar: data.avatar },
-        message: data.message,
-        createdAt: data.timestamp,
+      // Join the group room with userId
+      socketClient.emit('join_group', id, user.id);
+      console.log(`Joined group ${id} with user ${user.id}`);
+
+      // Listen for incoming messages
+      const handleReceiveMessage = (data: any) => {
+        if (!data || !data.userId) {
+          console.warn('Invalid message data received:', data);
+          return;
+        }
+
+        const newMessage: Group['messages'][0] = {
+          senderId: { 
+            _id: data.userId, 
+            username: data.username || 'Unknown', 
+            avatar: data.avatar || '' 
+          },
+          message: data.message || '',
+          createdAt: data.timestamp || new Date().toISOString(),
+        };
+        addMessage(newMessage);
       };
-      addMessage(newMessage);
-    });
 
-    // Cleanup on unmount
-    return () => {
-      socketClient.emit('leave_group', id);
-      socketClient.off('receive_message');
-    };
-  }, [id, user, addMessage]);
+      socketClient.on('receive_message', handleReceiveMessage);
+
+      // Watch party event handlers
+      const handleWatchPartyStart = (data: any) => {
+        if (!data || !data.movie) {
+          console.warn('Invalid watch party start data:', data);
+          return;
+        }
+
+        setActiveWatchParty(data);
+
+        // Only the host should immediately start the player
+        if (user?.id === data.hostId) {
+          const { startWatchParty } = useWatchPartyStore.getState();
+          startWatchParty(id, data.movie, data.hostId, data.hostUsername, data.hostAvatar);
+          setShowWatchPartyPlayer(true);
+        } else {
+          // For other members, show a notification/invitation
+          toast({
+            title: 'Watch Party Started! 🎬',
+            description: `${data.hostUsername} started a watch party. Click Watch Party button to join!`,
+          });
+        }
+      };
+
+      const handleWatchPartyMemberJoined = (data: any) => {
+        if (!data || !data.userId) return;
+
+        // If this is the current user joining, initialize the store if needed
+        if (data.userId === user?.id && !useWatchPartyStore.getState().isActive) {
+          // Guard against missing data - use event data as fallback
+          const movie = activeWatchParty?.movie || data.movie;
+          const hostId = activeWatchParty?.hostId || data.hostId;
+          const hostUsername = activeWatchParty?.hostUsername || data.hostUsername;
+          const hostAvatar = activeWatchParty?.hostAvatar || data.hostAvatar;
+
+          if (!movie || !hostId) {
+            console.error('Missing movie or host data for watch party initialization:', { movie, hostId, activeWatchParty, data });
+            toast({
+              title: 'Error',
+              description: 'Failed to get watch party details. Please refresh and try again.',
+              variant: 'destructive',
+            });
+            return;
+          }
+
+          const { joinWatchParty } = useWatchPartyStore.getState();
+          joinWatchParty(id, movie, {
+            userId: hostId,
+            username: hostUsername,
+            avatar: hostAvatar,
+            isHost: true,
+          });
+          // Now the host is in the store, request sync
+          socketClient.emit('request_playback_sync', {
+            groupId: id,
+            userId: user.id,
+          });
+        }
+
+        // Add the member (for all other members and the joining member)
+        const { addMember } = useWatchPartyStore.getState();
+        addMember({
+          userId: data.userId,
+          username: data.username || 'Unknown',
+          avatar: data.avatar || '',
+          isHost: false,
+        });
+
+        if (data.userId !== user?.id) {
+          toast({
+            title: 'Member Joined',
+            description: `${data.username} joined the watch party`,
+          });
+        }
+      };
+
+      const handleWatchPartyMemberLeft = (data: any) => {
+        if (!data || !data.userId) return;
+
+        const { removeMember } = useWatchPartyStore.getState();
+        removeMember(data.userId);
+
+        toast({
+          title: 'Member Left',
+          description: 'A member left the watch party',
+        });
+      };
+
+      const handleWatchPartyEnd = () => {
+        const { endWatchParty } = useWatchPartyStore.getState();
+        endWatchParty();
+        setShowWatchPartyPlayer(false);
+        setShowWatchPartyModal(false);
+        setActiveWatchParty(null);
+
+        toast({
+          title: 'Watch Party Ended',
+          description: 'The host ended the watch party',
+        });
+      };
+
+      socketClient.on('watch_party_started', handleWatchPartyStart);
+      socketClient.on('watch_party_member_joined', handleWatchPartyMemberJoined);
+      socketClient.on('watch_party_member_left', handleWatchPartyMemberLeft);
+      socketClient.on('watch_party_ended', handleWatchPartyEnd);
+
+      // Error handler
+      const handleError = (error: any) => {
+        console.error('Socket error in group detail:', error);
+        toast({
+          title: 'Connection Error',
+          description: 'Failed to connect to chat. Please refresh the page.',
+          variant: 'destructive',
+        });
+      };
+
+      socketClient.on('connect_error', handleError);
+
+      // Cleanup on unmount
+      return () => {
+        socketClient.emit('leave_group', id);
+        socketClient.off('receive_message', handleReceiveMessage);
+        socketClient.off('watch_party_started', handleWatchPartyStart);
+        socketClient.off('watch_party_member_joined', handleWatchPartyMemberJoined);
+        socketClient.off('watch_party_member_left', handleWatchPartyMemberLeft);
+        socketClient.off('watch_party_ended', handleWatchPartyEnd);
+        socketClient.off('connect_error', handleError);
+      };
+    } catch (error) {
+      console.error('Error setting up socket connection:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to setup chat connection',
+        variant: 'destructive',
+      });
+    }
+  }, [id, user, addMessage, toast]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
   const handleSendMessage = () => {
-    if (!messageText.trim() || !id || !user || !currentGroup) return;
+    if (!messageText.trim() || !id || !user || !currentGroup) {
+      console.warn('Cannot send message: missing required data');
+      return;
+    }
 
-    socketClient.emit('send_message', {
-      groupId: id,
-      message: messageText,
-      userId: user._id,
-      username: user.username,
-      avatar: user.avatar,
-    });
+    try {
+      const messageData = {
+        groupId: id,
+        message: messageText.trim(),
+        userId: user.id,
+        username: user.username,
+        avatar: user.avatar || '',
+      };
 
-    setMessageText('');
+      socketClient.emit('send_message', messageData);
+      setMessageText('');
+      console.log('Message sent:', messageData);
+    } catch (error) {
+      console.error('Error sending message:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to send message',
+        variant: 'destructive',
+      });
+    }
   };
 
   const copyInviteCode = () => {
@@ -175,6 +341,37 @@ export default function GroupDetailPage() {
     }
   };
 
+  const handleWatchPartyButtonClick = () => {
+    if (activeWatchParty) {
+      if (user?.id === activeWatchParty.hostId) {
+        const { isActive } = useWatchPartyStore.getState();
+        if (!isActive) {
+          const { startWatchParty } = useWatchPartyStore.getState();
+          startWatchParty(id, activeWatchParty.movie, activeWatchParty.hostId, activeWatchParty.hostUsername, activeWatchParty.hostAvatar);
+        }
+        setShowWatchPartyPlayer(true);
+      } else {
+        socketClient.emit('join_watch_party', {
+          groupId: id,
+          userId: user.id,
+          username: user.username,
+          avatar: user.avatar || '',
+          movie: activeWatchParty.movie,
+          hostId: activeWatchParty.hostId,
+          hostUsername: activeWatchParty.hostUsername,
+          hostAvatar: activeWatchParty.hostAvatar,
+        });
+        setShowWatchPartyPlayer(true);
+        toast({
+          title: 'Joining...',
+          description: 'Syncing with the watch party',
+        });
+      }
+    } else {
+      setShowWatchPartyModal(true);
+    }
+  };
+
   const handleOpenMovieDialog = () => {
     fetchAvailableMovies();
     setShowMovieDialog(true);
@@ -215,7 +412,11 @@ export default function GroupDetailPage() {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={handleWatchPartyButtonClick}
+              >
                 <Tv className="w-4 h-4 mr-2" />
                 Watch Party
               </Button>
@@ -234,7 +435,7 @@ export default function GroupDetailPage() {
                 </div>
               ) : (
                 messages.map((msg, index) => {
-                  const isOwnMessage = msg.senderId._id === user?._id;
+                  const isOwnMessage = msg.senderId._id === user?.id;
                   return (
                     <motion.div
                       key={`${msg.senderId._id}-${msg.createdAt}-${index}`}
@@ -302,7 +503,7 @@ export default function GroupDetailPage() {
         </div>
 
         {/* Right Sidebar */}
-        <div className="w-80 border-l border-border bg-card hidden lg:block flex flex-col">
+        <div className="w-80 border-l border-border bg-card hidden lg:flex flex-col">
           <Tabs defaultValue="playlist" className="flex-1 flex flex-col">
             <TabsList className="w-full justify-start px-2 pt-2 bg-transparent border-b">
               <TabsTrigger value="playlist" className="flex items-center gap-1">
@@ -483,6 +684,24 @@ export default function GroupDetailPage() {
           </Tabs>
         </div>
       </div>
+
+      {/* Watch Party Modal */}
+      <WatchPartyModal
+        isOpen={showWatchPartyModal}
+        onClose={() => setShowWatchPartyModal(false)}
+        groupId={id || ''}
+        onStartWatchParty={(movie) => {
+          setShowWatchPartyPlayer(true);
+        }}
+      />
+
+      {/* Watch Party Player */}
+      {showWatchPartyPlayer && (
+        <WatchPartyPlayer
+          groupId={id || ''}
+          onClose={() => setShowWatchPartyPlayer(false)}
+        />
+      )}
     </div>
   );
 }

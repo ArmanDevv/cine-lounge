@@ -36,7 +36,7 @@ export default function MovieUploadForm({ onClose, genres }: Props) {
       toast({ title: 'Invalid file type', description: 'Only mp4, mov and mkv are allowed', variant: 'destructive' });
       return;
     }
-
+    
     if (f.size > MAX_SIZE_MB * 1024 * 1024) {
       toast({ title: 'File too large', description: `Max video size is ${MAX_SIZE_MB} MB`, variant: 'destructive' });
       return;
@@ -94,7 +94,7 @@ export default function MovieUploadForm({ onClose, genres }: Props) {
         <Label>Description</Label>
         <Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Movie description..." className="mt-2" rows={4} />
       </div>
-
+      
       <div>
         <Label>Genres</Label>
         <div className="flex flex-wrap gap-2 mt-2">

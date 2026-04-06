@@ -2,6 +2,7 @@
 
 export interface User {
   id: string;
+  _id?: string; // For backend compatibility
   username: string;
   email: string;
   avatar: string;

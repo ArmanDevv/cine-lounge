@@ -46,7 +46,11 @@ export const useGroupStore = create<GroupState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const group = await groupService.getGroupById(id);
-      set({ currentGroup: group, isLoading: false });
+      set({ 
+        currentGroup: group, 
+        messages: group.messages || [],
+        isLoading: false 
+      });
     } catch (error: any) {
       set({ error: error.message, isLoading: false });
     }
@@ -129,7 +133,13 @@ export const useGroupStore = create<GroupState>((set, get) => ({
   },
 
   addMessage: (message) => {
-    set(state => ({ messages: [...state.messages, message] }));
+    set(state => ({ 
+      messages: [...state.messages, message],
+      currentGroup: state.currentGroup ? {
+        ...state.currentGroup,
+        messages: [...state.currentGroup.messages, message]
+      } : null
+    }));
   },
 
   setCurrentGroup: (group) => {

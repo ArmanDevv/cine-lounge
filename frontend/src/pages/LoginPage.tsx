@@ -26,10 +26,11 @@ export default function LoginPage() {
         description: 'You have successfully signed in.',
       });
       navigate('/');
-    } catch (err) {
+    } catch (err: any) {
+      const errorMsg = err?.message || 'Please check your credentials and try again.';
       toast({
         title: 'Login failed',
-        description: 'Please check your credentials and try again.',
+        description: errorMsg,
         variant: 'destructive',
       });
     }

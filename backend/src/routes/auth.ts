@@ -14,34 +14,50 @@ router.post('/register', async (req, res) => {
 
     // Validate input
     if (!username || !email || !password) {
+      console.log('Missing required fields');
       return res.status(400).json({ 
         message: 'Username, email, and password are required' 
       });
     }
 
     if (username.length < 3) {
+      console.log('Username too short:', username);
       return res.status(400).json({ 
         message: 'Username must be at least 3 characters' 
       });
     }
 
     if (password.length < 6) {
+      console.log('Password too short');
       return res.status(400).json({ 
         message: 'Password must be at least 6 characters' 
       });
     }
 
     // Check if user exists
+    console.log('Checking for existing user with email:', email, 'or username:', username);
     const existingUser = await User.findOne({ $or: [{ email }, { username }] });
     if (existingUser) {
-      return res.status(400).json({ message: 'User already exists' });
+      console.log('User already exists:', {
+        id: existingUser._id,
+        email: existingUser.email,
+        username: existingUser.username,
+        matchEmail: existingUser.email === email,
+        matchUsername: existingUser.username === username,
+      });
+      return res.status(400).json({ 
+        message: existingUser.email === email ? 'Email already registered' : 'Username already taken',
+        field: existingUser.email === email ? 'email' : 'username'
+      });
     }
 
     // Hash password
+    console.log('Hashing password...');
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
     // Create user
+    console.log('Creating user document...');
     const user = new User({
       username,
       email,
@@ -49,6 +65,7 @@ router.post('/register', async (req, res) => {
     });
 
     await user.save();
+    console.log('User saved successfully:', user._id);
 
     // Generate JWT
     const token = jwt.sign(
@@ -72,41 +89,62 @@ router.post('/register', async (req, res) => {
     });
   } catch (error: any) {
     console.error('Registration error:', error);
-    res.status(500).json({ message: error.message || 'Server error', stack: error.stack });
+    console.error('Error code:', error.code);
+    console.error('Error name:', error.name);
+    
+    // Handle MongoDB duplicate key errors
+    if (error.code === 11000) {
+      const field = Object.keys(error.keyPattern)[0];
+      console.error('Duplicate key error on field:', field);
+      return res.status(400).json({ 
+        message: `This ${field} is already registered`,
+        field: field
+      });
+    }
+    
+    res.status(500).json({ message: error.message || 'Server error' });
   }
 });
 
 // Login
 router.post('/login', async (req, res) => {
   try {
+    console.log('Login endpoint hit. Email:', req.body.email);
     const { email, password } = req.body;
 
     // Validate input
     if (!email || !password) {
+      console.log('Missing email or password');
       return res.status(400).json({ 
         message: 'Email and password are required' 
       });
     }
 
     // Find user
+    console.log('Finding user by email:', email);
     const user = await User.findOne({ email });
     if (!user) {
+      console.log('User not found for email:', email);
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
     // Check password
+    console.log('Verifying password for user:', user._id);
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
+      console.log('Password mismatch for user:', user._id);
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
     // Generate JWT
+    console.log('Generating JWT for user:', user._id);
     const token = jwt.sign(
       { userId: user._id },
       process.env.JWT_SECRET || 'your-secret-key',
       { expiresIn: '7d' }
     );
 
+    console.log('Login successful for user:', user._id);
     res.json({
       user: {
         id: user._id,
@@ -120,9 +158,9 @@ router.post('/login', async (req, res) => {
       },
       token,
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Login error:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: error.message || 'Server error' });
   }
 });
 

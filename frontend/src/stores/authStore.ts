@@ -39,6 +39,7 @@ export const useAuthStore = create<AuthState>()(
           });
         } catch (error: any) {
           const msg = error?.response?.data?.message || error?.message || 'Login failed';
+          console.error('Login error details:', error?.response?.data);
           set({ error: msg, isLoading: false });
           throw new Error(msg);
         }
@@ -57,6 +58,7 @@ export const useAuthStore = create<AuthState>()(
           });
         } catch (error: any) {
           const msg = error?.response?.data?.message || error?.message || 'Registration failed';
+          console.error('Registration error details:', error?.response?.data);
           set({ error: msg, isLoading: false });
           throw new Error(msg);
         }

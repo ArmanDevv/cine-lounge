@@ -49,10 +49,11 @@ export default function RegisterPage() {
         description: 'Your account has been created successfully.',
       });
       navigate('/');
-    } catch (err) {
+    } catch (err: any) {
+      const errorMsg = err?.message || 'Please try again with different credentials.';
       toast({
         title: 'Registration failed',
-        description: 'Please try again with different credentials.',
+        description: errorMsg,
         variant: 'destructive',
       });
     }

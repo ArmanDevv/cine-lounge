@@ -282,3 +282,49 @@ export const getUserGroups = async (req: Request, res: Response) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+export const getAgoraToken = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).userId;
+    const { groupId } = req.params;
+
+    // Verify group exists and user is a member
+    const group = await Group.findById(groupId);
+    if (!group) {
+      return res.status(404).json({ message: 'Group not found' });
+    }
+
+    const isMember = group.members.some(
+      (m: any) => m.userId.toString() === userId
+    );
+    if (!isMember) {
+      return res.status(403).json({ message: 'User is not a member of this group' });
+    }
+
+    // Import Agora service
+    const agoraService = require('../services/agora.service').default;
+
+    if (!agoraService.isConfigured()) {
+      return res.status(500).json({
+        message: 'Video conferencing is not configured. Please set up Agora credentials.',
+      });
+    }
+
+    // Generate token for this user to join the watch party video channel
+    const token = agoraService.generateToken(
+      groupId, // Channel name is the group ID
+      parseInt(userId, 10), // User ID
+      'publisher' // User can publish their own video
+    );
+
+    res.status(200).json({
+      token,
+      appId: agoraService.getAppId(),
+      channelId: groupId,
+      userId: userId,
+    });
+  } catch (error: any) {
+    console.error('Error generating Agora token:', error);
+    res.status(500).json({ message: error.message });
+  }
+};
