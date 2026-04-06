@@ -358,13 +358,13 @@ export const AgoraVideoCall: React.FC<AgoraVideoCallProps> = ({
   };
 
   return (
-    <div className="flex flex-col gap-4 bg-slate-900 rounded-lg p-4 w-full">
-      {/* Controls */}
-      <div className="flex gap-2 justify-center items-center">
+    <div className="flex flex-col gap-1 bg-slate-900 rounded-lg p-2 w-full h-full overflow-hidden">
+      {/* Controls - Compact */}
+      <div className="flex gap-1 justify-center items-center flex-shrink-0">
         <button
           onClick={toggleCamera}
           disabled={!isInitialized}
-          className={`p-2 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+          className={`p-1 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
             isCameraOn
               ? 'bg-green-600 hover:bg-green-700'
               : 'bg-red-600 hover:bg-red-700'
@@ -372,7 +372,7 @@ export const AgoraVideoCall: React.FC<AgoraVideoCallProps> = ({
           title={isCameraOn ? 'Turn off camera' : 'Turn on camera'}
         >
           {isCameraOn ? (
-            <Video className="w-5 h-5 text-white" />
+            <Video className="w-4 h-4 text-white" />
           ) : (
             <VideoOff className="w-5 h-5 text-white" />
           )}
@@ -381,7 +381,7 @@ export const AgoraVideoCall: React.FC<AgoraVideoCallProps> = ({
         <button
           onClick={toggleMicrophone}
           disabled={!isInitialized}
-          className={`p-2 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+          className={`p-1 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
             isMicrophoneOn
               ? 'bg-green-600 hover:bg-green-700'
               : 'bg-red-600 hover:bg-red-700'
@@ -389,32 +389,32 @@ export const AgoraVideoCall: React.FC<AgoraVideoCallProps> = ({
           title={isMicrophoneOn ? 'Mute' : 'Unmute'}
         >
           {isMicrophoneOn ? (
-            <Mic className="w-5 h-5 text-white" />
+            <Mic className="w-4 h-4 text-white" />
           ) : (
-            <MicOff className="w-5 h-5 text-white" />
+            <MicOff className="w-4 h-4 text-white" />
           )}
         </button>
 
         <button
           onClick={leaveCall}
           disabled={!isInitialized}
-          className="p-2 rounded-full bg-red-700 hover:bg-red-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="p-1 rounded-full bg-red-700 hover:bg-red-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           title="Leave video call"
         >
-          <LogOut className="w-5 h-5 text-white" />
+          <LogOut className="w-4 h-4 text-white" />
         </button>
 
-        <span className="text-white text-sm font-medium ml-4">
+        <span className="text-white text-xs font-medium ml-2">
           {remoteVideosRef.current.size + 1} in call
         </span>
       </div>
 
-      {/* Video Container - Always render */}
-      <div className="flex flex-col gap-2 w-full">
-        {/* Local video */}
-        <div className="flex flex-col gap-2 w-full">
-          <div className="relative w-full rounded-lg overflow-hidden bg-black flex items-center justify-center"
-            style={{ minHeight: '240px', height: '240px' }}
+      {/* Video Container - Always render with proper sizing */}
+      <div className="flex flex-col gap-1 w-full h-full overflow-hidden">
+        {/* Local video - Compact */}
+        <div className="flex flex-col gap-1 w-full">
+          <div className="relative w-full rounded-lg overflow-hidden bg-black flex items-center justify-center flex-shrink-0"
+            style={{ height: '140px' }}
           >
             <div
               ref={localVideoRef}
@@ -425,8 +425,8 @@ export const AgoraVideoCall: React.FC<AgoraVideoCallProps> = ({
             {!isInitialized && (
               <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-10">
                 <div className="flex flex-col items-center gap-2">
-                  <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  <p className="text-white text-sm">Initializing video...</p>
+                  <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <p className="text-white text-xs">Initializing...</p>
                 </div>
               </div>
             )}
@@ -434,12 +434,12 @@ export const AgoraVideoCall: React.FC<AgoraVideoCallProps> = ({
           <p className="text-white text-xs text-center font-medium">You</p>
         </div>
 
-        {/* Remote videos */}
+        {/* Remote videos - Scrollable */}
         {remoteVideosRef.current.size > 0 && (
-          <div className="flex gap-2 overflow-x-auto py-2 w-full">
+          <div className="flex gap-1 overflow-x-auto py-1 w-full flex-shrink-0">
             <div
               ref={remoteVideoContainersRef}
-              className="flex gap-2 flex-nowrap"
+              className="flex gap-1 flex-nowrap"
             />
           </div>
         )}

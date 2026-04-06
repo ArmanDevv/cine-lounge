@@ -399,23 +399,30 @@ export default function WatchPartyPlayer({ onClose, groupId }: WatchPartyPlayerP
         </div>
       </div>
 
-      {/* Main Content - Responsive Layout */}
+      {/* Main Content - Responsive Layout with proper overflow handling */}
       <div className="flex flex-1 gap-2 md:gap-3 p-2 md:p-3 w-full min-h-0 overflow-hidden flex-col md:flex-row">
         {/* Left Column - Video Player and Video Call */}
-        <div className="flex-1 flex flex-col gap-2 md:gap-3 min-h-0 min-w-0 order-1 md:order-1">
-          {/* Video Player - 16:9 aspect ratio */}
-          <div className="relative w-full bg-black rounded-lg overflow-hidden flex-1 min-h-0">
+        <div className="flex-1 flex flex-col gap-2 md:gap-3 min-h-0 min-w-0 order-1 md:order-1 overflow-hidden">
+          {/* Video Player - Fills remaining space or shrinks when VC is active */}
+          <div 
+            className="relative w-full bg-black rounded-lg overflow-hidden min-w-0 flex-shrink-0"
+            style={{
+              height: showVideoCall ? '180px' : '100%',
+              flexBasis: showVideoCall ? 'auto' : '0',
+              minHeight: '180px',
+            }}
+          >
             <div ref={videoRef} className="w-full h-full bg-black" />
           </div>
 
-          {/* Agora Video Call */}
+          {/* Agora Video Call - Fixed height when visible */}
           {showVideoCall && user && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="w-full overflow-hidden rounded-lg border border-border"
-              style={{ maxHeight: '200px' }}
+              className="w-full overflow-hidden rounded-lg border border-border flex-shrink-0"
+              style={{ height: '200px' }}
             >
               <AgoraVideoCall
                 groupId={groupId}
@@ -433,13 +440,13 @@ export default function WatchPartyPlayer({ onClose, groupId }: WatchPartyPlayerP
             </motion.div>
           )}
 
-          {/* Members Sidebar - Mobile Bottom */}
-          {showMembersSidebar && (
+          {/* Members Sidebar - Mobile Bottom (only show if not too crowded) */}
+          {showMembersSidebar && !showVideoCall && (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="md:hidden w-full bg-card/50 backdrop-blur rounded-lg border border-border p-3 overflow-y-auto"
-              style={{ maxHeight: '150px' }}
+              className="md:hidden w-full bg-card/50 backdrop-blur rounded-lg border border-border p-3 overflow-y-auto flex-shrink-0"
+              style={{ maxHeight: '120px' }}
             >
               <div className="flex items-center gap-2 mb-2">
                 <Users className="w-4 h-4 text-primary" />
@@ -454,9 +461,9 @@ export default function WatchPartyPlayer({ onClose, groupId }: WatchPartyPlayerP
                     <img
                       src={member.avatar}
                       alt={member.username}
-                      className="w-8 h-8 rounded-full"
+                      className="w-8 h-8 rounded-full flex-shrink-0"
                     />
-                    <div className="min-w-0">
+                    <div className="min-w-0 flex-1">
                       <p className="font-medium text-xs truncate">{member.username}</p>
                       {member.isHost && (
                         <p className="text-xs text-primary">Host</p>
@@ -469,26 +476,26 @@ export default function WatchPartyPlayer({ onClose, groupId }: WatchPartyPlayerP
           )}
         </div>
 
-        {/* Members Sidebar - Desktop Right */}
+        {/* Members Sidebar - Desktop Right (Fixed width, scrollable) */}
         {showMembersSidebar && (
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="hidden md:flex flex-col w-width-72 gap-3 bg-card/50 backdrop-blur rounded-lg border border-border p-4 min-h-0"
+            className="hidden md:flex flex-col gap-3 bg-card/50 backdrop-blur rounded-lg border border-border p-4 min-h-0 flex-shrink-0 overflow-hidden"
             style={{ width: '280px' }}
           >
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-shrink-0">
               <Users className="w-5 h-5 text-primary" />
               <h3 className="font-semibold text-sm">Watching ({members.length})</h3>
             </div>
 
-            <div className="space-y-2 overflow-y-auto flex-1">
+            <div className="space-y-2 overflow-y-auto flex-1 min-h-0">
               {members.map((member) => (
                 <motion.div
                   key={member.userId}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors"
+                  className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors flex-shrink-0"
                 >
                   <img
                     src={member.avatar}
@@ -505,7 +512,7 @@ export default function WatchPartyPlayer({ onClose, groupId }: WatchPartyPlayerP
               ))}
             </div>
 
-            <div className="pt-3 border-t border-border text-xs text-muted-foreground">
+            <div className="pt-3 border-t border-border text-xs text-muted-foreground flex-shrink-0">
               <p>✨ All members synchronized</p>
             </div>
           </motion.div>
