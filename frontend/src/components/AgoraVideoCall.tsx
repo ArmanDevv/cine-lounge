@@ -33,6 +33,7 @@ export const AgoraVideoCall: React.FC<AgoraVideoCallProps> = ({
   const localCameraTrackRef = useRef<ICameraVideoTrack | null>(null);
   const localMicrophoneTrackRef = useRef<IMicrophoneAudioTrack | null>(null);
   const remoteVideosRef = useRef<Map<string, ParticipantVideo>>(new Map());
+  const initializingRef = useRef(false); // Prevent multiple initializations
 
   const [isInitialized, setIsInitialized] = useState(false);
   const [isCameraOn, setIsCameraOn] = useState(true);
@@ -163,6 +164,14 @@ export const AgoraVideoCall: React.FC<AgoraVideoCallProps> = ({
   // Initialize Agora
   useEffect(() => {
     const initializeAgora = async () => {
+      // Guard: Prevent multiple initializations
+      if (initializingRef.current || clientRef.current) {
+        console.log('Agora already initializing or initialized, skipping...');
+        return;
+      }
+
+      initializingRef.current = true;
+
       try {
         // Request camera and microphone permissions explicitly
         console.log('Requesting camera and microphone permissions...');
@@ -259,6 +268,7 @@ export const AgoraVideoCall: React.FC<AgoraVideoCallProps> = ({
         const errorMessage =
           error.message || 'Failed to initialize video conferencing';
         console.error('Agora initialization error:', error);
+        initializingRef.current = false; // Reset flag on error
         onError?.(errorMessage);
       }
     };
@@ -277,8 +287,11 @@ export const AgoraVideoCall: React.FC<AgoraVideoCallProps> = ({
           await clientRef.current.leave();
           clientRef.current = null;
         }
+        initializingRef.current = false; // Reset flag on cleanup
+        setIsInitialized(false);
       } catch (error) {
         console.error('Error during cleanup:', error);
+        initializingRef.current = false;
       }
     };
 
@@ -287,7 +300,7 @@ export const AgoraVideoCall: React.FC<AgoraVideoCallProps> = ({
     return () => {
       cleanupAgora();
     };
-  }, [groupId, userId, onError, handleUserPublished, handleUserUnpublished, handleUserJoined, handleUserLeft]);
+  }, [groupId, userId]); // Only depend on actual external dependencies
 
   // Toggle camera
   const toggleCamera = async () => {
