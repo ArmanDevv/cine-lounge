@@ -26,6 +26,7 @@ export default function WatchPartyPlayer({ onClose, groupId }: WatchPartyPlayerP
   const [showVideoCall, setShowVideoCall] = useState(false);
   const [participantCount, setParticipantCount] = useState(1);
   const [showMembersSidebar, setShowMembersSidebar] = useState(true);
+  const [movieVolume, setMovieVolume] = useState(100); // Movie volume (0-100)
   const [videoCallInvitation, setVideoCallInvitation] = useState<{
     initiatorName: string;
     initiatorAvatar?: string;
@@ -156,6 +157,14 @@ export default function WatchPartyPlayer({ onClose, groupId }: WatchPartyPlayerP
       }
     };
   }, [currentMovie, groupId, updatePlaybackState, hostId, user?.id]);
+
+  // Update movie volume
+  useEffect(() => {
+    if (playerRef.current) {
+      // Convert 0-100 to 0-1 range for video.js
+      playerRef.current.volume(movieVolume / 100);
+    }
+  }, [movieVolume]);
 
   // Sync playback when receiving updates from other members
   useEffect(() => {
@@ -413,6 +422,21 @@ export default function WatchPartyPlayer({ onClose, groupId }: WatchPartyPlayerP
             }}
           >
             <div ref={videoRef} className="w-full h-full bg-black" />
+          </div>
+
+          {/* Movie Volume Control */}
+          <div className="flex items-center gap-2 px-2 py-1 bg-card/50 rounded-lg border border-border flex-shrink-0">
+            <label className="text-xs text-muted-foreground whitespace-nowrap font-medium">Movie Vol:</label>
+            <input
+              type="range"
+              min="0"
+              max="100"
+              value={movieVolume}
+              onChange={(e) => setMovieVolume(Number(e.target.value))}
+              className="flex-1 h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-primary"
+              title="Movie volume"
+            />
+            <span className="text-xs text-muted-foreground w-8 text-right">{movieVolume}</span>
           </div>
 
           {/* Agora Video Call - Fixed height when visible */}

@@ -40,6 +40,7 @@ export const AgoraVideoCall: React.FC<AgoraVideoCallProps> = ({
   const [isInitialized, setIsInitialized] = useState(false);
   const [isCameraOn, setIsCameraOn] = useState(true);
   const [isMicrophoneOn, setIsMicrophoneOn] = useState(true);
+  const [vcVolume, setVcVolume] = useState(100); // Video call volume (0-100)
   const [participants, setParticipants] = useState<string[]>([]);
   const remoteVideoContainersRef = useRef<HTMLDivElement>(null);
 
@@ -101,6 +102,10 @@ export const AgoraVideoCall: React.FC<AgoraVideoCallProps> = ({
           participant.videoTrack = user.videoTrack;
         } else if (mediaType === 'audio') {
           participant.audioTrack = user.audioTrack;
+          // Apply current VC volume to newly added audio track
+          if (participant.audioTrack && typeof participant.audioTrack.setVolume === 'function') {
+            participant.audioTrack.setVolume(vcVolume);
+          }
         }
 
         // Play audio track
@@ -328,6 +333,17 @@ export const AgoraVideoCall: React.FC<AgoraVideoCallProps> = ({
     }
   };
 
+  // Update video call volume
+  const updateVcVolume = (volume: number) => {
+    setVcVolume(volume);
+    // Apply volume to all remote audio tracks
+    remoteVideosRef.current.forEach((participant) => {
+      if (participant.audioTrack && typeof participant.audioTrack.setVolume === 'function') {
+        participant.audioTrack.setVolume(volume);
+      }
+    });
+  };
+
   // Leave video call
   const leaveCall = async () => {
     try {
@@ -365,7 +381,7 @@ export const AgoraVideoCall: React.FC<AgoraVideoCallProps> = ({
   return (
     <div className="flex flex-col gap-1 bg-slate-900 rounded-lg p-2 w-full h-full overflow-hidden">
       {/* Controls - Compact */}
-      <div className="flex gap-1 justify-center items-center flex-shrink-0">
+      <div className="flex gap-1 justify-center items-center flex-shrink-0 flex-wrap">
         <button
           onClick={toggleCamera}
           disabled={!isInitialized}
@@ -409,9 +425,24 @@ export const AgoraVideoCall: React.FC<AgoraVideoCallProps> = ({
           <LogOut className="w-4 h-4 text-white" />
         </button>
 
-        <span className="text-white text-xs font-medium ml-2">
+        <span className="text-white text-xs font-medium">
           {remoteVideosRef.current.size + 1} in call
         </span>
+
+        {/* VC Volume Slider */}
+        <div className="flex items-center gap-1 ml-auto pr-1">
+          <label className="text-white text-xs whitespace-nowrap">VC Vol:</label>
+          <input
+            type="range"
+            min="0"
+            max="100"
+            value={vcVolume}
+            onChange={(e) => updateVcVolume(Number(e.target.value))}
+            className="w-20 h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-green-600"
+            title="Video call volume"
+          />
+          <span className="text-white text-xs w-8 text-right">{vcVolume}</span>
+        </div>
       </div>
 
       {/* Video Container - Always render with proper sizing */}
