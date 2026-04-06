@@ -19,6 +19,7 @@ class SocketClient {
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,
       reconnectionAttempts: 5,
+      reconnectionDelayMax: 10000,
       auth: {
         token: localStorage.getItem('auth_token'),
       },
