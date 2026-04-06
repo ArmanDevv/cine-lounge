@@ -428,6 +428,7 @@ export default function WatchPartyPlayer({ onClose, groupId }: WatchPartyPlayerP
                 groupId={groupId}
                 userId={user.id}
                 onParticipantCountChange={setParticipantCount}
+                onCallEnded={() => setShowVideoCall(false)}
                 onError={(error) => {
                   toast({
                     title: 'Video Call Error',

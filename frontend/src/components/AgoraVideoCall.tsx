@@ -20,6 +20,7 @@ interface AgoraVideoCallProps {
   userId: string;
   onError?: (error: string) => void;
   onParticipantCountChange?: (count: number) => void;
+  onCallEnded?: () => void;
 }
 
 export const AgoraVideoCall: React.FC<AgoraVideoCallProps> = ({
@@ -27,6 +28,7 @@ export const AgoraVideoCall: React.FC<AgoraVideoCallProps> = ({
   userId,
   onError,
   onParticipantCountChange,
+  onCallEnded,
 }) => {
   const clientRef = useRef<IAgoraRTCClient | null>(null);
   const localVideoRef = useRef<HTMLDivElement>(null);
@@ -352,6 +354,9 @@ export const AgoraVideoCall: React.FC<AgoraVideoCallProps> = ({
       if (remoteVideoContainersRef.current) {
         remoteVideoContainersRef.current.innerHTML = '';
       }
+
+      // Notify parent that call ended
+      onCallEnded?.();
     } catch (error) {
       console.error('Error leaving video call:', error);
     }
