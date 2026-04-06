@@ -313,6 +313,8 @@ export const getAgoraToken = async (req: Request, res: Response) => {
 
     // Generate token for this user to join the watch party video channel
     const agoraUid = convertUserIdToAgoraUid(userId);
+    console.log(`[Agora] Converting userId: ${userId} -> uid: ${agoraUid}`);
+    
     const token = agoraService.generateToken(
       groupId, // Channel name is the group ID
       agoraUid, // Properly converted numeric UID

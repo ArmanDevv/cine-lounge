@@ -178,7 +178,7 @@ export const AgoraVideoCall: React.FC<AgoraVideoCallProps> = ({
 
         // Fetch Agora token from backend using groupService
         const { token, appId, channelId, uid } = await groupService.getAgoraToken(groupId);
-        console.log('Agora token received:', { appId, channelId, uid });
+        console.log('Agora token received:', { appId, channelId, uid, userId });
 
         // Create Agora client
         const client = AgoraRTC.createClient({ mode: 'rtc', codec: 'vp9' });
