@@ -107,6 +107,7 @@ export const groupService = {
       appId: string;
       channelId: string;
       userId: string;
+      uid: number;
     }>(`/groups/${groupId}/agora-token`);
     return response.data;
   },

@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import Group from '../models/Group';
 import User from '../models/User';
+import { convertUserIdToAgoraUid } from '../utils/agoraUtils';
 
 // Generate unique invite code
 const generateInviteCode = () => {
@@ -311,9 +312,10 @@ export const getAgoraToken = async (req: Request, res: Response) => {
     }
 
     // Generate token for this user to join the watch party video channel
+    const agoraUid = convertUserIdToAgoraUid(userId);
     const token = agoraService.generateToken(
       groupId, // Channel name is the group ID
-      parseInt(userId, 10), // User ID
+      agoraUid, // Properly converted numeric UID
       'publisher' // User can publish their own video
     );
 
@@ -322,6 +324,7 @@ export const getAgoraToken = async (req: Request, res: Response) => {
       appId: agoraService.getAppId(),
       channelId: groupId,
       userId: userId,
+      uid: agoraUid,
     });
   } catch (error: any) {
     console.error('Error generating Agora token:', error);

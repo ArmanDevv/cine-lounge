@@ -177,8 +177,8 @@ export const AgoraVideoCall: React.FC<AgoraVideoCallProps> = ({
         }
 
         // Fetch Agora token from backend using groupService
-        const { token, appId, channelId } = await groupService.getAgoraToken(groupId);
-        console.log('Agora token received:', { appId, channelId });
+        const { token, appId, channelId, uid } = await groupService.getAgoraToken(groupId);
+        console.log('Agora token received:', { appId, channelId, uid });
 
         // Create Agora client
         const client = AgoraRTC.createClient({ mode: 'rtc', codec: 'vp9' });
@@ -192,8 +192,8 @@ export const AgoraVideoCall: React.FC<AgoraVideoCallProps> = ({
         client.on('user-joined', handleUserJoined);
         client.on('user-left', handleUserLeft);
 
-        // Join channel
-        const uid = parseInt(userId, 10) || Math.floor(Math.random() * 100000);
+        // Join channel with proper UID from backend
+        console.log('Joining Agora channel with UID:', uid);
         await client.join(appId, channelId, token, uid);
         console.log('Successfully joined Agora channel with UID:', uid);
 
