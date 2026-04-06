@@ -7,6 +7,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { socketClient } from '@/services/socketClient';
 import { useToast } from '@/hooks/use-toast';
 import AgoraVideoCall from '@/components/AgoraVideoCall';
+import VideoCallInvitationModal from '@/components/VideoCallInvitationModal';
 import videojs from 'video.js';
 import 'video.js/dist/video-js.css';
 
@@ -24,6 +25,12 @@ export default function WatchPartyPlayer({ onClose, groupId }: WatchPartyPlayerP
   const lastEmittedTimeRef = useRef<number>(0);
   const [showVideoCall, setShowVideoCall] = useState(false);
   const [participantCount, setParticipantCount] = useState(1);
+  const [showMembersSidebar, setShowMembersSidebar] = useState(true);
+  const [videoCallInvitation, setVideoCallInvitation] = useState<{
+    initiatorName: string;
+    initiatorAvatar?: string;
+    initiatedBy: string;
+  } | null>(null);
 
   const {
     currentMovie,
@@ -231,26 +238,39 @@ export default function WatchPartyPlayer({ onClose, groupId }: WatchPartyPlayerP
 
   // Handle video call state synchronization across members
   useEffect(() => {
-    const handleVideoCallStarted = (data: any) => {
-      console.log('Video call started by another member');
-      // Auto-show video call for all members
+    const handleVideoCallSelfStarted = (data: any) => {
+      console.log('You initiated the video call');
+      // You started the call, auto-join immediately
       setShowVideoCall(true);
       toast({
         title: 'Video Call Started',
-        description: 'A member started a video call. Joining...',
+        description: 'Starting your video call...',
+      });
+    };
+
+    const handleVideoCallInvitation = (data: any) => {
+      console.log('Video call invitation received from:', data.initiatorName);
+      // Show invitation modal for other members
+      setVideoCallInvitation({
+        initiatorName: data.initiatorName,
+        initiatorAvatar: data.initiatorAvatar,
+        initiatedBy: data.initiatedBy,
       });
     };
 
     const handleVideoCallEnded = (data: any) => {
-      console.log('Video call ended by initiator');
+      console.log('Video call ended');
       setShowVideoCall(false);
+      setVideoCallInvitation(null);
     };
 
-    socketClient.on('video_call_started', handleVideoCallStarted);
+    socketClient.on('video_call_self_started', handleVideoCallSelfStarted);
+    socketClient.on('video_call_invitation', handleVideoCallInvitation);
     socketClient.on('video_call_ended', handleVideoCallEnded);
 
     return () => {
-      socketClient.off('video_call_started', handleVideoCallStarted);
+      socketClient.off('video_call_self_started', handleVideoCallSelfStarted);
+      socketClient.off('video_call_invitation', handleVideoCallInvitation);
       socketClient.off('video_call_ended', handleVideoCallEnded);
     };
   }, [groupId, toast]);
@@ -260,10 +280,12 @@ export default function WatchPartyPlayer({ onClose, groupId }: WatchPartyPlayerP
     setShowVideoCall(newState);
 
     if (newState) {
-      // Broadcast that a video call is starting
+      // Broadcast that this user is starting a video call
       socketClient.emit('video_call_started', {
         groupId,
         initiatedBy: user?.id,
+        initiatorName: user?.name || user?.username || 'User',
+        initiatorAvatar: user?.avatar,
         timestamp: new Date().toISOString(),
       });
     } else {
@@ -273,6 +295,24 @@ export default function WatchPartyPlayer({ onClose, groupId }: WatchPartyPlayerP
         initiatedBy: user?.id,
       });
     }
+  };
+
+  // Handle video call invitation response
+  const handleAcceptVideoCall = () => {
+    setShowVideoCall(true);
+    setVideoCallInvitation(null);
+    
+    // Notify others that you joined
+    socketClient.emit('video_call_join', {
+      groupId,
+      userId: user?.id,
+      userName: user?.name || user?.username || 'User',
+      userAvatar: user?.avatar,
+    });
+  };
+
+  const handleRejectVideoCall = () => {
+    setVideoCallInvitation(null);
   };
 
   const handleLeaveWatchParty = () => {
@@ -303,58 +343,69 @@ export default function WatchPartyPlayer({ onClose, groupId }: WatchPartyPlayerP
   return (
     <div className="fixed inset-0 bg-black z-50 flex flex-col">
       {/* Header */}
-      <div className="bg-card/80 backdrop-blur border-b border-border p-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <h2 className="text-lg font-semibold">{currentMovie.title}</h2>
-          <span className="text-sm text-muted-foreground">
+      <div className="bg-card/80 backdrop-blur border-b border-border p-3 md:p-4 flex items-center justify-between flex-wrap gap-2 md:gap-4">
+        <div className="flex items-center gap-2 md:gap-3 min-w-0">
+          <h2 className="text-base md:text-lg font-semibold truncate">{currentMovie.title}</h2>
+          <span className="text-xs md:text-sm text-muted-foreground whitespace-nowrap">
             {user?.id === hostId && '(Host)'}
           </span>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 md:gap-4">
           <Button
             variant={showVideoCall ? 'default' : 'outline'}
             size="sm"
             onClick={() => handleVideoCallToggle(!showVideoCall)}
-            className="gap-2"
+            className="gap-2 text-xs md:text-sm"
           >
             {showVideoCall ? (
               <>
                 <Video className="w-4 h-4" />
-                Video ({participantCount})
+                <span className="hidden sm:inline">Video ({participantCount})</span>
+                <span className="sm:hidden">VC</span>
               </>
             ) : (
               <>
                 <VideoOff className="w-4 h-4" />
-                Start Video
+                <span className="hidden sm:inline">Start Video</span>
               </>
             )}
           </Button>
           <Button
             variant="ghost"
             size="sm"
-            onClick={handleLeaveWatchParty}
-            className="text-red-500 hover:text-red-600"
+            onClick={() => setShowMembersSidebar(!showMembersSidebar)}
+            className="md:hidden gap-2 text-xs"
           >
-            <LogOut className="w-4 h-4 mr-2" />
-            Leave
+            <Users className="w-4 h-4" />
+            <span>Team</span>
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleLeaveWatchParty}
+            className="text-red-500 hover:text-red-600 text-xs md:text-sm"
+          >
+            <LogOut className="w-4 h-4 md:mr-2" />
+            <span className="hidden sm:inline">Leave</span>
           </Button>
           <Button
             variant="ghost"
             size="icon"
             onClick={onClose}
+            className="h-8 w-8 md:h-10 md:w-10"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4 md:w-5 md:h-5" />
           </Button>
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="flex flex-1 gap-3 p-3 w-full min-h-0 overflow-hidden">
+      {/* Main Content - Responsive Layout */}
+      <div className="flex flex-1 gap-2 md:gap-3 p-2 md:p-3 w-full min-h-0 overflow-hidden flex-col md:flex-row">
         {/* Left Column - Video Player and Video Call */}
-        <div className="flex-1 flex flex-col gap-3 min-h-0 min-w-0">
-          {/* Video Player */}
-          <div className="flex-1 flex flex-col bg-black min-h-0 rounded-lg overflow-hidden">
-            <div ref={videoRef} className="flex-1 bg-black w-full min-h-0" />
+        <div className="flex-1 flex flex-col gap-2 md:gap-3 min-h-0 min-w-0 order-1 md:order-1">
+          {/* Video Player - 16:9 aspect ratio */}
+          <div className="relative w-full bg-black rounded-lg overflow-hidden flex-1 min-h-0">
+            <div ref={videoRef} className="w-full h-full bg-black" />
           </div>
 
           {/* Agora Video Call */}
@@ -363,7 +414,8 @@ export default function WatchPartyPlayer({ onClose, groupId }: WatchPartyPlayerP
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="min-h-[200px] overflow-hidden"
+              className="w-full overflow-hidden rounded-lg border border-border"
+              style={{ maxHeight: '200px' }}
             >
               <AgoraVideoCall
                 groupId={groupId}
@@ -380,47 +432,96 @@ export default function WatchPartyPlayer({ onClose, groupId }: WatchPartyPlayerP
               />
             </motion.div>
           )}
+
+          {/* Members Sidebar - Mobile Bottom */}
+          {showMembersSidebar && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="md:hidden w-full bg-card/50 backdrop-blur rounded-lg border border-border p-3 overflow-y-auto"
+              style={{ maxHeight: '150px' }}
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <Users className="w-4 h-4 text-primary" />
+                <h3 className="font-semibold text-sm">Members ({members.length})</h3>
+              </div>
+              <div className="space-y-2">
+                {members.map((member) => (
+                  <div
+                    key={member.userId}
+                    className="flex items-center gap-2 p-2 rounded bg-secondary/50 text-sm"
+                  >
+                    <img
+                      src={member.avatar}
+                      alt={member.username}
+                      className="w-8 h-8 rounded-full"
+                    />
+                    <div className="min-w-0">
+                      <p className="font-medium text-xs truncate">{member.username}</p>
+                      {member.isHost && (
+                        <p className="text-xs text-primary">Host</p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          )}
         </div>
 
-        {/* Members Sidebar */}
-        <motion.div
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          className="w-72 bg-card/50 backdrop-blur rounded-lg border border-border p-4 flex flex-col gap-4 overflow-y-auto max-h-[calc(100vh-200px)]"
-        >
-          <div className="flex items-center gap-2">
-            <Users className="w-5 h-5 text-primary" />
-            <h3 className="font-semibold">Watching Together ({members.length})</h3>
-          </div>
+        {/* Members Sidebar - Desktop Right */}
+        {showMembersSidebar && (
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="hidden md:flex flex-col w-width-72 gap-3 bg-card/50 backdrop-blur rounded-lg border border-border p-4 min-h-0"
+            style={{ width: '280px' }}
+          >
+            <div className="flex items-center gap-2">
+              <Users className="w-5 h-5 text-primary" />
+              <h3 className="font-semibold text-sm">Watching ({members.length})</h3>
+            </div>
 
-          <div className="space-y-3">
-            {members.map((member) => (
-              <motion.div
-                key={member.userId}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors"
-              >
-                <img
-                  src={member.avatar}
-                  alt={member.username}
-                  className="w-10 h-10 rounded-full"
-                />
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-sm truncate">{member.username}</p>
-                  {member.isHost && (
-                    <p className="text-xs text-primary">Host</p>
-                  )}
-                </div>
-              </motion.div>
-            ))}
-          </div>
+            <div className="space-y-2 overflow-y-auto flex-1">
+              {members.map((member) => (
+                <motion.div
+                  key={member.userId}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors"
+                >
+                  <img
+                    src={member.avatar}
+                    alt={member.username}
+                    className="w-10 h-10 rounded-full flex-shrink-0"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm truncate">{member.username}</p>
+                    {member.isHost && (
+                      <p className="text-xs text-primary">Host</p>
+                    )}
+                  </div>
+                </motion.div>
+              ))}
+            </div>
 
-          <div className="mt-auto pt-4 border-t border-border text-xs text-muted-foreground">
-            <p>✨ All members are synchronized</p>
-          </div>
-        </motion.div>
+            <div className="pt-3 border-t border-border text-xs text-muted-foreground">
+              <p>✨ All members synchronized</p>
+            </div>
+          </motion.div>
+        )}
       </div>
+
+      {/* Video Call Invitation Modal */}
+      {videoCallInvitation && (
+        <VideoCallInvitationModal
+          isOpen={!!videoCallInvitation}
+          initiatorName={videoCallInvitation.initiatorName}
+          initiatorAvatar={videoCallInvitation.initiatorAvatar}
+          onAccept={handleAcceptVideoCall}
+          onReject={handleRejectVideoCall}
+        />
+      )}
     </div>
   );
 }

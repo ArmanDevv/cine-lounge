@@ -361,18 +361,28 @@ io.on('connection', (socket) => {
   // Video call events
   socket.on('video_call_started', (data: any) => {
     try {
-      const { groupId, initiatedBy } = data;
+      const { groupId, initiatedBy, initiatorName, initiatorAvatar } = data;
 
       if (!groupId) {
         console.error('Invalid video call started data:', data);
         return;
       }
 
-      console.log(`Video call started in group ${groupId} by ${initiatedBy}`);
+      console.log(`Video call started in group ${groupId} by ${initiatorName}`);
 
-      // Broadcast to all members in the watch party room
-      io.to(`watch_party:${groupId}`).emit('video_call_started', {
+      // Send to initiator that their call started (auto-join)
+      socket.emit('video_call_self_started', {
         initiatedBy,
+        initiatorName,
+        initiatorAvatar,
+        timestamp: new Date().toISOString(),
+      });
+
+      // Send to other members asking them to join (not auto-joining)
+      socket.to(`watch_party:${groupId}`).emit('video_call_invitation', {
+        initiatedBy,
+        initiatorName,
+        initiatorAvatar,
         timestamp: new Date().toISOString(),
       });
     } catch (error) {
@@ -398,6 +408,30 @@ io.on('connection', (socket) => {
       });
     } catch (error) {
       console.error('Error ending video call:', error);
+    }
+  });
+
+  // When user accepts video call invitation
+  socket.on('video_call_join', (data: any) => {
+    try {
+      const { groupId, userId, userName, userAvatar } = data;
+
+      if (!groupId || !userId) {
+        console.error('Invalid video call join data:', data);
+        return;
+      }
+
+      console.log(`${userName} (${userId}) joined video call in group ${groupId}`);
+
+      // Notify all others in the watch party that this user joined
+      io.to(`watch_party:${groupId}`).emit('video_call_member_joined', {
+        userId,
+        userName,
+        userAvatar,
+        timestamp: new Date().toISOString(),
+      });
+    } catch (error) {
+      console.error('Error joining video call:', error);
     }
   });
 
