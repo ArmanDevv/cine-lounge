@@ -398,16 +398,16 @@ export default function WatchPartyPlayer({ onClose, groupId }: WatchPartyPlayerP
       </div>
 
       {/* Main Content - Professional Layout */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Movie Player Section - Takes up appropriate space */}
-        <div className="flex-1 flex flex-col gap-3 p-4 overflow-hidden max-h-[60%] md:max-h-[70%]">
-          {/* Video Player Container */}
-          <div className="flex-1 bg-black rounded-xl overflow-hidden shadow-lg">
+      <div className="flex-1 flex flex-col overflow-hidden gap-2 p-4">
+        {/* Movie Player Section */}
+        <div className="flex flex-col gap-2" style={{ flex: showVideoCall ? '0 0 auto' : '1 1 auto', minHeight: showVideoCall ? '280px' : '250px' }}>
+          {/* Video Player Container - Always visible */}
+          <div className="flex-1 bg-black rounded-xl overflow-hidden shadow-lg border border-slate-700 min-h-0">
             <div ref={videoRef} className="w-full h-full" />
           </div>
 
           {/* Movie Volume Control - Professional Styling */}
-          <div className="flex items-center gap-3 bg-card/60 backdrop-blur rounded-lg border border-border/50 px-4 py-2.5">
+          <div className="flex items-center gap-3 bg-card/60 backdrop-blur rounded-lg border border-border/50 px-4 py-2.5 flex-shrink-0">
             <span className="text-sm font-medium text-white whitespace-nowrap min-w-fit">Movie</span>
             <input
               type="range"
@@ -422,13 +422,13 @@ export default function WatchPartyPlayer({ onClose, groupId }: WatchPartyPlayerP
           </div>
         </div>
 
-        {/* Video Call Section - Takes remaining space when active */}
+        {/* Video Call Section - Responsive layout when active */}
         {showVideoCall && user && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            className="flex-1 flex flex-col gap-3 p-4 overflow-hidden border-t border-border/50"
+            className="flex-1 flex flex-col border-t border-border/50 pt-2 min-h-0 overflow-hidden"
           >
             <AgoraVideoCall
               groupId={groupId}

@@ -50,29 +50,72 @@ export const AgoraVideoCall: React.FC<AgoraVideoCallProps> = ({
     onParticipantCountChange?.(count);
   }, [onParticipantCountChange]);
 
-  // Render remote videos in a responsive grid
+  // Render remote videos with proper grid layout
   const renderRemoteVideos = useCallback(() => {
     if (!remoteVideoContainersRef.current) return;
 
     const container = remoteVideoContainersRef.current;
-    container.innerHTML = '';
+    
+    // Clear old videos
+    const existingVideos = container.querySelectorAll('[id^="remote-video-"]');
+    existingVideos.forEach(video => {
+      if (!remoteVideosRef.current.has(video.id.replace('remote-video-', ''))) {
+        video.remove();
+      }
+    });
 
+    // Get total count including local user
+    const totalParticipants = remoteVideosRef.current.size + 1;
+    
+    // Determine grid layout based on participant count
+    let gridClass = 'grid w-full h-full gap-3';
+    if (totalParticipants === 2) {
+      gridClass += ' grid-cols-2'; // 2 participants: 2 columns
+    } else if (totalParticipants === 3) {
+      gridClass += ' grid-cols-3'; // 3 participants: 3 columns
+    } else if (totalParticipants === 4) {
+      gridClass += ' grid-cols-2 grid-rows-2'; // 4 participants: 2x2 grid
+    } else if (totalParticipants > 4) {
+      gridClass += ' grid-cols-3'; // 5+ participants: 3 columns, wrapping
+    } else {
+      gridClass += ' grid-cols-1'; // 1 participant: full width
+    }
+
+    // Update the container's grid layout
+    const gridContainer = container.parentElement;
+    if (gridContainer) {
+      gridContainer.className = gridClass;
+    }
+
+    // Add new remote videos
     remoteVideosRef.current.forEach((participant) => {
-      const videoDiv = document.createElement('div');
-      videoDiv.className = 'relative bg-slate-800 rounded-lg overflow-hidden shadow-lg border border-slate-700';
-      videoDiv.id = `remote-video-${participant.userId}`;
-      videoDiv.style.minHeight = '150px';
-
-      // Add user label at bottom
-      const label = document.createElement('div');
-      label.className = 'absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2';
-      label.innerHTML = `<p class="text-white text-xs font-medium">User ${participant.userId.slice(0, 6)}</p>`;
-      videoDiv.appendChild(label);
-
-      container.appendChild(videoDiv);
+      let videoDiv = container.querySelector(`#remote-video-${participant.userId}`) as HTMLElement;
+      
+      if (!videoDiv) {
+        videoDiv = document.createElement('div');
+        videoDiv.id = `remote-video-${participant.userId}`;
+        videoDiv.className = 'relative bg-slate-800 rounded-lg overflow-hidden shadow-lg border border-slate-700';
+        
+        // Add user label
+        const label = document.createElement('div');
+        label.className = 'absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2 z-10';
+        label.innerHTML = `<p class="text-white text-xs font-medium">User ${participant.userId.slice(0, 6)}</p>`;
+        videoDiv.appendChild(label);
+        
+        container.appendChild(videoDiv);
+      }
 
       // Play video track
       if (participant.videoTrack) {
+        // Clear previous tracks
+        const existingTracks = videoDiv.querySelectorAll('video, canvas');
+        existingTracks.forEach(track => {
+          if (track.parentElement === videoDiv) {
+            track.remove();
+          }
+        });
+        
+        // Play new track
         participant.videoTrack.play(videoDiv);
       }
     });
@@ -380,8 +423,8 @@ export const AgoraVideoCall: React.FC<AgoraVideoCallProps> = ({
   return (
     <div className="flex flex-col gap-3 w-full h-full bg-black rounded-xl overflow-hidden">
       {/* Controls Bar - Professional Design */}
-      <div className="flex items-center justify-between px-4 py-3 bg-slate-900/50 border-b border-slate-700/50">
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between px-4 py-3 bg-slate-900/50 border-b border-slate-700/50 flex-shrink-0">
+        <div className="flex items-center gap-3">
           <button
             onClick={toggleCamera}
             disabled={!isInitialized}
@@ -425,7 +468,7 @@ export const AgoraVideoCall: React.FC<AgoraVideoCallProps> = ({
             <LogOut className="w-5 h-5 text-white" />
           </button>
 
-          <div className="text-white text-sm font-medium ml-4">
+          <div className="text-white text-sm font-medium">
             {remoteVideosRef.current.size + 1} in call
           </div>
         </div>
@@ -447,19 +490,8 @@ export const AgoraVideoCall: React.FC<AgoraVideoCallProps> = ({
       </div>
 
       {/* Video Grid Container - Responsive Grid Layout */}
-      <div className="flex-1 overflow-hidden p-3">
-        <div 
-          className="w-full h-full grid gap-3"
-          style={{
-            gridTemplateColumns: remoteVideosRef.current.size === 0 
-              ? '1fr'
-              : remoteVideosRef.current.size === 1
-              ? 'repeat(2, 1fr)'
-              : remoteVideosRef.current.size === 2
-              ? 'repeat(3, 1fr)'
-              : 'repeat(auto-fit, minmax(200px, 1fr))',
-          }}
-        >
+      <div className="flex-1 overflow-hidden p-3 min-h-0">
+        <div className="w-full h-full grid gap-3" id="video-grid-container">
           {/* Local Video */}
           <div className="relative bg-slate-800 rounded-lg overflow-hidden shadow-lg border border-slate-700">
             <div
@@ -481,11 +513,12 @@ export const AgoraVideoCall: React.FC<AgoraVideoCallProps> = ({
             )}
           </div>
 
-          {/* Remote Videos Grid */}
+          {/* Remote Videos Container */}
           <div
             ref={remoteVideoContainersRef}
             className="contents"
           />
+        </div>
         </div>
       </div>
     </div>
