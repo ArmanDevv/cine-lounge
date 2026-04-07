@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { X, Play, Pause, Users, LogOut, Video, VideoOff } from 'lucide-react';
+import { X, LogOut, Video, VideoOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useWatchPartyStore } from '@/stores/watchPartyStore';
 import { useAuthStore } from '@/stores/authStore';
@@ -25,7 +25,6 @@ export default function WatchPartyPlayer({ onClose, groupId }: WatchPartyPlayerP
   const lastEmittedTimeRef = useRef<number>(0);
   const [showVideoCall, setShowVideoCall] = useState(false);
   const [participantCount, setParticipantCount] = useState(1);
-  const [showMembersSidebar, setShowMembersSidebar] = useState(true);
   const [movieVolume, setMovieVolume] = useState(100); // Movie volume (0-100)
   const [videoCallInvitation, setVideoCallInvitation] = useState<{
     initiatorName: string;
@@ -351,195 +350,100 @@ export default function WatchPartyPlayer({ onClose, groupId }: WatchPartyPlayerP
 
   return (
     <div className="fixed inset-0 bg-black z-50 flex flex-col">
-      {/* Header */}
-      <div className="bg-card/80 backdrop-blur border-b border-border p-3 md:p-4 flex items-center justify-between flex-wrap gap-2 md:gap-4">
-        <div className="flex items-center gap-2 md:gap-3 min-w-0">
-          <h2 className="text-base md:text-lg font-semibold truncate">{currentMovie.title}</h2>
-          <span className="text-xs md:text-sm text-muted-foreground whitespace-nowrap">
-            {user?.id === hostId && '(Host)'}
-          </span>
+      {/* Header - Clean and Professional */}
+      <div className="bg-card/90 backdrop-blur-md border-b border-border/50 px-4 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-3 min-w-0 flex-1">
+          <h2 className="text-lg font-semibold truncate text-white">{currentMovie.title}</h2>
+          {user?.id === hostId && (
+            <span className="text-xs bg-primary/20 text-primary px-2 py-1 rounded">Host</span>
+          )}
         </div>
-        <div className="flex items-center gap-2 md:gap-4">
+        <div className="flex items-center gap-2">
           <Button
             variant={showVideoCall ? 'default' : 'outline'}
             size="sm"
             onClick={() => handleVideoCallToggle(!showVideoCall)}
-            className="gap-2 text-xs md:text-sm"
+            className="gap-2"
           >
             {showVideoCall ? (
               <>
                 <Video className="w-4 h-4" />
-                <span className="hidden sm:inline">Video ({participantCount})</span>
-                <span className="sm:hidden">VC</span>
+                <span>Video ({participantCount})</span>
               </>
             ) : (
               <>
                 <VideoOff className="w-4 h-4" />
-                <span className="hidden sm:inline">Start Video</span>
+                <span>Start Video</span>
               </>
             )}
           </Button>
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setShowMembersSidebar(!showMembersSidebar)}
-            className="md:hidden gap-2 text-xs"
-          >
-            <Users className="w-4 h-4" />
-            <span>Team</span>
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
             onClick={handleLeaveWatchParty}
-            className="text-red-500 hover:text-red-600 text-xs md:text-sm"
+            className="text-red-500 hover:text-red-600 hover:bg-red-500/10"
           >
-            <LogOut className="w-4 h-4 md:mr-2" />
-            <span className="hidden sm:inline">Leave</span>
+            <LogOut className="w-4 h-4 mr-2" />
+            Leave
           </Button>
           <Button
             variant="ghost"
             size="icon"
             onClick={onClose}
-            className="h-8 w-8 md:h-10 md:w-10"
+            className="h-9 w-9"
           >
-            <X className="w-4 h-4 md:w-5 md:h-5" />
+            <X className="w-5 h-5" />
           </Button>
         </div>
       </div>
 
-      {/* Main Content - Responsive Layout with proper overflow handling */}
-      <div className="flex flex-1 gap-2 md:gap-3 p-2 md:p-3 w-full min-h-0 overflow-hidden flex-col md:flex-row">
-        {/* Left Column - Video Player and Video Call */}
-        <div className="flex-1 flex flex-col gap-2 md:gap-3 min-h-0 min-w-0 order-1 md:order-1 overflow-hidden">
-          {/* Video Player - Fills remaining space or shrinks when VC is active */}
-          <div 
-            className="relative w-full bg-black rounded-lg overflow-hidden min-w-0 flex-shrink-0"
-            style={{
-              height: showVideoCall ? '180px' : '100%',
-              flexBasis: showVideoCall ? 'auto' : '0',
-              minHeight: '180px',
-            }}
-          >
-            <div ref={videoRef} className="w-full h-full bg-black" />
+      {/* Main Content - Professional Layout */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Movie Player Section - Takes up appropriate space */}
+        <div className="flex-1 flex flex-col gap-3 p-4 overflow-hidden max-h-[60%] md:max-h-[70%]">
+          {/* Video Player Container */}
+          <div className="flex-1 bg-black rounded-xl overflow-hidden shadow-lg">
+            <div ref={videoRef} className="w-full h-full" />
           </div>
 
-          {/* Movie Volume Control */}
-          <div className="flex items-center gap-2 px-2 py-1 bg-card/50 rounded-lg border border-border flex-shrink-0">
-            <label className="text-xs text-muted-foreground whitespace-nowrap font-medium">Movie Vol:</label>
+          {/* Movie Volume Control - Professional Styling */}
+          <div className="flex items-center gap-3 bg-card/60 backdrop-blur rounded-lg border border-border/50 px-4 py-2.5">
+            <span className="text-sm font-medium text-white whitespace-nowrap min-w-fit">Movie</span>
             <input
               type="range"
               min="0"
               max="100"
               value={movieVolume}
               onChange={(e) => setMovieVolume(Number(e.target.value))}
-              className="flex-1 h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-primary"
+              className="flex-1 h-2 bg-slate-700 rounded-full appearance-none cursor-pointer accent-emerald-500"
               title="Movie volume"
             />
-            <span className="text-xs text-muted-foreground w-8 text-right">{movieVolume}</span>
+            <span className="text-sm font-medium text-white w-10 text-right">{movieVolume}</span>
           </div>
-
-          {/* Agora Video Call - Fixed height when visible */}
-          {showVideoCall && user && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className="w-full overflow-hidden rounded-lg border border-border flex-shrink-0"
-              style={{ height: '200px' }}
-            >
-              <AgoraVideoCall
-                groupId={groupId}
-                userId={user.id}
-                onParticipantCountChange={setParticipantCount}
-                onCallEnded={() => setShowVideoCall(false)}
-                onError={(error) => {
-                  toast({
-                    title: 'Video Call Error',
-                    description: error,
-                    variant: 'destructive',
-                  });
-                  setShowVideoCall(false);
-                }}
-              />
-            </motion.div>
-          )}
-
-          {/* Members Sidebar - Mobile Bottom (only show if not too crowded) */}
-          {showMembersSidebar && !showVideoCall && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="md:hidden w-full bg-card/50 backdrop-blur rounded-lg border border-border p-3 overflow-y-auto flex-shrink-0"
-              style={{ maxHeight: '120px' }}
-            >
-              <div className="flex items-center gap-2 mb-2">
-                <Users className="w-4 h-4 text-primary" />
-                <h3 className="font-semibold text-sm">Members ({members.length})</h3>
-              </div>
-              <div className="space-y-2">
-                {members.map((member) => (
-                  <div
-                    key={member.userId}
-                    className="flex items-center gap-2 p-2 rounded bg-secondary/50 text-sm"
-                  >
-                    <img
-                      src={member.avatar}
-                      alt={member.username}
-                      className="w-8 h-8 rounded-full flex-shrink-0"
-                    />
-                    <div className="min-w-0 flex-1">
-                      <p className="font-medium text-xs truncate">{member.username}</p>
-                      {member.isHost && (
-                        <p className="text-xs text-primary">Host</p>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </motion.div>
-          )}
         </div>
 
-        {/* Members Sidebar - Desktop Right (Fixed width, scrollable) */}
-        {showMembersSidebar && (
+        {/* Video Call Section - Takes remaining space when active */}
+        {showVideoCall && user && (
           <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="hidden md:flex flex-col gap-3 bg-card/50 backdrop-blur rounded-lg border border-border p-4 min-h-0 flex-shrink-0 overflow-hidden"
-            style={{ width: '280px' }}
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="flex-1 flex flex-col gap-3 p-4 overflow-hidden border-t border-border/50"
           >
-            <div className="flex items-center gap-2 flex-shrink-0">
-              <Users className="w-5 h-5 text-primary" />
-              <h3 className="font-semibold text-sm">Watching ({members.length})</h3>
-            </div>
-
-            <div className="space-y-2 overflow-y-auto flex-1 min-h-0">
-              {members.map((member) => (
-                <motion.div
-                  key={member.userId}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors flex-shrink-0"
-                >
-                  <img
-                    src={member.avatar}
-                    alt={member.username}
-                    className="w-10 h-10 rounded-full flex-shrink-0"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm truncate">{member.username}</p>
-                    {member.isHost && (
-                      <p className="text-xs text-primary">Host</p>
-                    )}
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-
-            <div className="pt-3 border-t border-border text-xs text-muted-foreground flex-shrink-0">
-              <p>✨ All members synchronized</p>
-            </div>
+            <AgoraVideoCall
+              groupId={groupId}
+              userId={user.id}
+              onParticipantCountChange={setParticipantCount}
+              onCallEnded={() => setShowVideoCall(false)}
+              onError={(error) => {
+                toast({
+                  title: 'Video Call Error',
+                  description: error,
+                  variant: 'destructive',
+                });
+                setShowVideoCall(false);
+              }}
+            />
           </motion.div>
         )}
       </div>

@@ -50,7 +50,7 @@ export const AgoraVideoCall: React.FC<AgoraVideoCallProps> = ({
     onParticipantCountChange?.(count);
   }, [onParticipantCountChange]);
 
-  // Render remote videos
+  // Render remote videos in a responsive grid
   const renderRemoteVideos = useCallback(() => {
     if (!remoteVideoContainersRef.current) return;
 
@@ -59,15 +59,14 @@ export const AgoraVideoCall: React.FC<AgoraVideoCallProps> = ({
 
     remoteVideosRef.current.forEach((participant) => {
       const videoDiv = document.createElement('div');
-      videoDiv.className =
-        'relative w-32 h-24 bg-black rounded-lg overflow-hidden flex-shrink-0';
+      videoDiv.className = 'relative bg-slate-800 rounded-lg overflow-hidden shadow-lg border border-slate-700';
       videoDiv.id = `remote-video-${participant.userId}`;
+      videoDiv.style.minHeight = '150px';
 
-      // Add user label
+      // Add user label at bottom
       const label = document.createElement('div');
-      label.className =
-        'absolute bottom-0 left-0 right-0 bg-black bg-opacity-60 text-white text-xs px-2 py-1';
-      label.textContent = `User ${participant.userId.slice(0, 4)}`;
+      label.className = 'absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2';
+      label.innerHTML = `<p class="text-white text-xs font-medium">User ${participant.userId.slice(0, 6)}</p>`;
       videoDiv.appendChild(label);
 
       container.appendChild(videoDiv);
@@ -379,106 +378,115 @@ export const AgoraVideoCall: React.FC<AgoraVideoCallProps> = ({
   };
 
   return (
-    <div className="flex flex-col gap-1 bg-slate-900 rounded-lg p-2 w-full h-full overflow-hidden">
-      {/* Controls - Compact */}
-      <div className="flex gap-1 justify-center items-center flex-shrink-0 flex-wrap">
-        <button
-          onClick={toggleCamera}
-          disabled={!isInitialized}
-          className={`p-1 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-            isCameraOn
-              ? 'bg-green-600 hover:bg-green-700'
-              : 'bg-red-600 hover:bg-red-700'
-          }`}
-          title={isCameraOn ? 'Turn off camera' : 'Turn on camera'}
-        >
-          {isCameraOn ? (
-            <Video className="w-4 h-4 text-white" />
-          ) : (
-            <VideoOff className="w-5 h-5 text-white" />
-          )}
-        </button>
+    <div className="flex flex-col gap-3 w-full h-full bg-black rounded-xl overflow-hidden">
+      {/* Controls Bar - Professional Design */}
+      <div className="flex items-center justify-between px-4 py-3 bg-slate-900/50 border-b border-slate-700/50">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={toggleCamera}
+            disabled={!isInitialized}
+            className={`p-2 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+              isCameraOn
+                ? 'bg-emerald-600 hover:bg-emerald-700'
+                : 'bg-red-600 hover:bg-red-700'
+            }`}
+            title={isCameraOn ? 'Turn off camera' : 'Turn on camera'}
+          >
+            {isCameraOn ? (
+              <Video className="w-5 h-5 text-white" />
+            ) : (
+              <VideoOff className="w-5 h-5 text-white" />
+            )}
+          </button>
 
-        <button
-          onClick={toggleMicrophone}
-          disabled={!isInitialized}
-          className={`p-1 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-            isMicrophoneOn
-              ? 'bg-green-600 hover:bg-green-700'
-              : 'bg-red-600 hover:bg-red-700'
-          }`}
-          title={isMicrophoneOn ? 'Mute' : 'Unmute'}
-        >
-          {isMicrophoneOn ? (
-            <Mic className="w-4 h-4 text-white" />
-          ) : (
-            <MicOff className="w-4 h-4 text-white" />
-          )}
-        </button>
+          <button
+            onClick={toggleMicrophone}
+            disabled={!isInitialized}
+            className={`p-2 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+              isMicrophoneOn
+                ? 'bg-emerald-600 hover:bg-emerald-700'
+                : 'bg-red-600 hover:bg-red-700'
+            }`}
+            title={isMicrophoneOn ? 'Mute' : 'Unmute'}
+          >
+            {isMicrophoneOn ? (
+              <Mic className="w-5 h-5 text-white" />
+            ) : (
+              <MicOff className="w-5 h-5 text-white" />
+            )}
+          </button>
 
-        <button
-          onClick={leaveCall}
-          disabled={!isInitialized}
-          className="p-1 rounded-full bg-red-700 hover:bg-red-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          title="Leave video call"
-        >
-          <LogOut className="w-4 h-4 text-white" />
-        </button>
+          <button
+            onClick={leaveCall}
+            disabled={!isInitialized}
+            className="p-2 rounded-full bg-red-700 hover:bg-red-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Leave video call"
+          >
+            <LogOut className="w-5 h-5 text-white" />
+          </button>
 
-        <span className="text-white text-xs font-medium">
-          {remoteVideosRef.current.size + 1} in call
-        </span>
+          <div className="text-white text-sm font-medium ml-4">
+            {remoteVideosRef.current.size + 1} in call
+          </div>
+        </div>
 
-        {/* VC Volume Slider */}
-        <div className="flex items-center gap-1 ml-auto pr-1">
-          <label className="text-white text-xs whitespace-nowrap">VC Vol:</label>
+        {/* VC Volume Control - Right Side */}
+        <div className="flex items-center gap-3">
+          <label className="text-white text-sm whitespace-nowrap">VC Volume:</label>
           <input
             type="range"
             min="0"
             max="100"
             value={vcVolume}
             onChange={(e) => updateVcVolume(Number(e.target.value))}
-            className="w-20 h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-green-600"
+            className="w-32 h-2 bg-slate-700 rounded-full appearance-none cursor-pointer accent-emerald-500"
             title="Video call volume"
           />
-          <span className="text-white text-xs w-8 text-right">{vcVolume}</span>
+          <span className="text-white text-sm font-medium w-10 text-right">{vcVolume}</span>
         </div>
       </div>
 
-      {/* Video Container - Always render with proper sizing */}
-      <div className="flex flex-col gap-1 w-full h-full overflow-hidden">
-        {/* Local video - Compact */}
-        <div className="flex flex-col gap-1 w-full">
-          <div className="relative w-full rounded-lg overflow-hidden bg-black flex items-center justify-center flex-shrink-0"
-            style={{ height: '140px' }}
-          >
+      {/* Video Grid Container - Responsive Grid Layout */}
+      <div className="flex-1 overflow-hidden p-3">
+        <div 
+          className="w-full h-full grid gap-3"
+          style={{
+            gridTemplateColumns: remoteVideosRef.current.size === 0 
+              ? '1fr'
+              : remoteVideosRef.current.size === 1
+              ? 'repeat(2, 1fr)'
+              : remoteVideosRef.current.size === 2
+              ? 'repeat(3, 1fr)'
+              : 'repeat(auto-fit, minmax(200px, 1fr))',
+          }}
+        >
+          {/* Local Video */}
+          <div className="relative bg-slate-800 rounded-lg overflow-hidden shadow-lg border border-slate-700">
             <div
               ref={localVideoRef}
-              className="w-full h-full absolute inset-0"
+              className="w-full h-full"
             />
-            
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2">
+              <p className="text-white text-xs font-medium">You</p>
+            </div>
+
             {/* Loading overlay */}
             {!isInitialized && (
-              <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-10">
+              <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm">
                 <div className="flex flex-col items-center gap-2">
-                  <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  <p className="text-white text-xs">Initializing...</p>
+                  <div className="w-8 h-8 border-3 border-white border-t-transparent rounded-full animate-spin" />
+                  <p className="text-white text-sm">Initializing video...</p>
                 </div>
               </div>
             )}
           </div>
-          <p className="text-white text-xs text-center font-medium">You</p>
-        </div>
 
-        {/* Remote videos - Scrollable */}
-        {remoteVideosRef.current.size > 0 && (
-          <div className="flex gap-1 overflow-x-auto py-1 w-full flex-shrink-0">
-            <div
-              ref={remoteVideoContainersRef}
-              className="flex gap-1 flex-nowrap"
-            />
-          </div>
-        )}
+          {/* Remote Videos Grid */}
+          <div
+            ref={remoteVideoContainersRef}
+            className="contents"
+          />
+        </div>
       </div>
     </div>
   );
