@@ -519,7 +519,6 @@ export const AgoraVideoCall: React.FC<AgoraVideoCallProps> = ({
             className="contents"
           />
         </div>
-        </div>
       </div>
     </div>
   );
