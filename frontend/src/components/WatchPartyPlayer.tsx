@@ -398,11 +398,11 @@ export default function WatchPartyPlayer({ onClose, groupId }: WatchPartyPlayerP
       </div>
 
       {/* Main Content - Professional Layout */}
-      <div className="flex-1 flex flex-col overflow-hidden gap-2 p-4">
+      <div className="flex-1 flex flex-col gap-2 p-4 overflow-y-auto">
         {/* Movie Player Section */}
-        <div className="flex flex-col gap-2" style={{ flex: showVideoCall ? '0 0 auto' : '1 1 auto', minHeight: showVideoCall ? '280px' : '250px' }}>
-          {/* Video Player Container - Always visible */}
-          <div className="flex-1 bg-black rounded-xl overflow-hidden shadow-lg border border-slate-700 min-h-0">
+        <div className="flex flex-col gap-2 flex-shrink-0" style={{ flex: showVideoCall ? '0 0 auto' : '1 1 auto', minHeight: showVideoCall ? '280px' : '100%' }}>
+          {/* Video Player Container - Always visible with proper aspect ratio */}
+          <div className="flex-1 bg-black rounded-xl overflow-hidden shadow-lg border border-slate-700 min-h-0" style={{ aspectRatio: '16 / 9' }}>
             <div ref={videoRef} className="w-full h-full" />
           </div>
 
@@ -425,9 +425,9 @@ export default function WatchPartyPlayer({ onClose, groupId }: WatchPartyPlayerP
         {/* Video Call Section - Responsive layout when active */}
         {showVideoCall && user && (
           <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             className="flex-1 flex flex-col border-t border-border/50 pt-2 min-h-0 overflow-hidden"
           >
             <AgoraVideoCall

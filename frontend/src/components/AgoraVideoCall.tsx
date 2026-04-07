@@ -55,68 +55,71 @@ export const AgoraVideoCall: React.FC<AgoraVideoCallProps> = ({
     if (!remoteVideoContainersRef.current) return;
 
     const container = remoteVideoContainersRef.current;
-    
-    // Clear old videos
+    const gridContainer = document.getElementById('video-grid-container');
+    if (!gridContainer) return;
+
+    // Clear old videos (remove videos for users who left)
     const existingVideos = container.querySelectorAll('[id^="remote-video-"]');
     existingVideos.forEach(video => {
-      if (!remoteVideosRef.current.has(video.id.replace('remote-video-', ''))) {
+      const userId = video.id.replace('remote-video-', '');
+      if (!remoteVideosRef.current.has(userId)) {
         video.remove();
       }
     });
 
-    // Get total count including local user
+    // Calculate total participants (including self)
     const totalParticipants = remoteVideosRef.current.size + 1;
     
-    // Determine grid layout based on participant count
-    let gridClass = 'grid w-full h-full gap-3';
+    // Determine grid layout - use regex to update only grid class
+    let newGridClass = 'w-full h-full grid gap-3';
+    
     if (totalParticipants === 2) {
-      gridClass += ' grid-cols-2'; // 2 participants: 2 columns
+      newGridClass += ' grid-cols-2'; // 2 participants: 50% each
     } else if (totalParticipants === 3) {
-      gridClass += ' grid-cols-3'; // 3 participants: 3 columns
+      newGridClass += ' grid-cols-3'; // 3 participants: 33.3% each
     } else if (totalParticipants === 4) {
-      gridClass += ' grid-cols-2 grid-rows-2'; // 4 participants: 2x2 grid
+      newGridClass += ' grid-cols-2 grid-rows-2'; // 4 participants: 2x2 grid
     } else if (totalParticipants > 4) {
-      gridClass += ' grid-cols-3'; // 5+ participants: 3 columns, wrapping
+      newGridClass += ' grid-cols-3'; // 5+ participants: 3-col wrap
     } else {
-      gridClass += ' grid-cols-1'; // 1 participant: full width
+      newGridClass += ' grid-cols-1'; // 1 participant: full width
     }
 
-    // Update the container's grid layout
-    const gridContainer = container.parentElement;
-    if (gridContainer) {
-      gridContainer.className = gridClass;
-    }
+    // Update grid container's className
+    gridContainer.className = newGridClass;
+    console.log(`Updated grid layout for ${totalParticipants} participants: ${newGridClass}`);
 
-    // Add new remote videos
+    // Add or update remote videos
     remoteVideosRef.current.forEach((participant) => {
       let videoDiv = container.querySelector(`#remote-video-${participant.userId}`) as HTMLElement;
       
       if (!videoDiv) {
         videoDiv = document.createElement('div');
         videoDiv.id = `remote-video-${participant.userId}`;
-        videoDiv.className = 'relative bg-slate-800 rounded-lg overflow-hidden shadow-lg border border-slate-700';
+        videoDiv.className = 'relative bg-slate-800 rounded-lg overflow-hidden shadow-lg border border-slate-700 w-full h-full';
         
-        // Add user label
         const label = document.createElement('div');
         label.className = 'absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2 z-10';
         label.innerHTML = `<p class="text-white text-xs font-medium">User ${participant.userId.slice(0, 6)}</p>`;
         videoDiv.appendChild(label);
         
         container.appendChild(videoDiv);
+        console.log('Created new video div for:', participant.userId);
       }
 
-      // Play video track
       if (participant.videoTrack) {
-        // Clear previous tracks
-        const existingTracks = videoDiv.querySelectorAll('video, canvas');
-        existingTracks.forEach(track => {
-          if (track.parentElement === videoDiv) {
-            track.remove();
-          }
+        // Clear old canvas/video elements
+        const oldElements = videoDiv.querySelectorAll('video, canvas');
+        oldElements.forEach(el => {
+          if (el !== label) el.remove();
         });
-        
-        // Play new track
-        participant.videoTrack.play(videoDiv);
+
+        try {
+          participant.videoTrack.play(videoDiv);
+          console.log('Playing video for:', participant.userId);
+        } catch (error) {
+          console.error('Error playing video:', error);
+        }
       }
     });
   }, []);
@@ -491,9 +494,9 @@ export const AgoraVideoCall: React.FC<AgoraVideoCallProps> = ({
 
       {/* Video Grid Container - Responsive Grid Layout */}
       <div className="flex-1 overflow-hidden p-3 min-h-0">
-        <div className="w-full h-full grid gap-3" id="video-grid-container">
+        <div className="w-full h-full grid gap-3 grid-cols-1" id="video-grid-container">
           {/* Local Video */}
-          <div className="relative bg-slate-800 rounded-lg overflow-hidden shadow-lg border border-slate-700">
+          <div className="relative bg-slate-800 rounded-lg overflow-hidden shadow-lg border border-slate-700 w-full h-full">
             <div
               ref={localVideoRef}
               className="w-full h-full"
