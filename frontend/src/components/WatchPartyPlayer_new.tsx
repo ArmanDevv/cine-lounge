@@ -25,33 +25,24 @@ export default function WatchPartyPlayer({ onClose, groupId }: WatchPartyPlayerP
   const lastEmittedTimeRef = useRef<number>(0);
   const [showVideoCall, setShowVideoCall] = useState(false);
   const [participantCount, setParticipantCount] = useState(1);
-  const [movieVolume, setMovieVolume] = useState(100); // Movie volume (0-100)
+  const [movieVolume, setMovieVolume] = useState(100);
   const [videoCallInvitation, setVideoCallInvitation] = useState<{
     initiatorName: string;
     initiatorAvatar?: string;
     initiatedBy: string;
   } | null>(null);
 
-  const {
-    currentMovie,
-    currentTime,
-    isPlaying,
-    members,
-    hostId,
-    updatePlaybackState,
-  } = useWatchPartyStore();
+  const { currentMovie, hostId, updatePlaybackState } = useWatchPartyStore();
 
   // Initialize video player
   useEffect(() => {
     if (!currentMovie?.videoUrl || !videoRef.current) return;
 
-    const videoElement = videoRef.current.querySelector('video');
     if (playerRef.current) {
       playerRef.current.dispose();
       playerRef.current = null;
     }
 
-    // Clear container and create new video element
     if (videoRef.current) {
       videoRef.current.innerHTML = '';
     }
@@ -62,7 +53,6 @@ export default function WatchPartyPlayer({ onClose, groupId }: WatchPartyPlayerP
     video.setAttribute('preload', 'auto');
     videoRef.current?.appendChild(video);
 
-    // Initialize player with responsive settings
     const player = videojs(video, {
       controls: true,
       autoplay: false,
@@ -76,7 +66,6 @@ export default function WatchPartyPlayer({ onClose, groupId }: WatchPartyPlayerP
 
     playerRef.current = player;
 
-    // Fix video URL - remove any extra protocols
     let videoUrl = currentMovie.videoUrl;
     if (videoUrl && videoUrl.includes('https://https://')) {
       videoUrl = videoUrl.replace('https://https://', 'https://');
@@ -86,14 +75,8 @@ export default function WatchPartyPlayer({ onClose, groupId }: WatchPartyPlayerP
     }
 
     console.log('Setting video source:', videoUrl);
+    player.src({ src: videoUrl, type: 'video/mp4' });
 
-    // Set source
-    player.src({
-      src: videoUrl,
-      type: 'video/mp4',
-    });
-
-    // Handle play event
     const handlePlay = () => {
       try {
         updatePlaybackState(player.currentTime(), true);
@@ -107,7 +90,6 @@ export default function WatchPartyPlayer({ onClose, groupId }: WatchPartyPlayerP
       }
     };
 
-    // Handle pause event
     const handlePause = () => {
       try {
         updatePlaybackState(player.currentTime(), false);
@@ -121,7 +103,6 @@ export default function WatchPartyPlayer({ onClose, groupId }: WatchPartyPlayerP
       }
     };
 
-    // Handle seek event (debounced)
     const handleSeeking = () => {
       if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current);
       syncTimeoutRef.current = setTimeout(() => {
@@ -155,12 +136,11 @@ export default function WatchPartyPlayer({ onClose, groupId }: WatchPartyPlayerP
         playerRef.current = null;
       }
     };
-  }, [currentMovie, groupId, updatePlaybackState, hostId, user?.id]);
+  }, [currentMovie, groupId, updatePlaybackState, user?.id]);
 
   // Update movie volume
   useEffect(() => {
     if (playerRef.current) {
-      // Convert 0-100 to 0-1 range for video.js
       playerRef.current.volume(movieVolume / 100);
     }
   }, [movieVolume]);
@@ -168,7 +148,7 @@ export default function WatchPartyPlayer({ onClose, groupId }: WatchPartyPlayerP
   // Sync playback when receiving updates from other members
   useEffect(() => {
     const handlePlaySync = (data: any) => {
-      if (!playerRef.current) return; // Ignore if no player
+      if (!playerRef.current) return;
       const timeDiff = Math.abs(playerRef.current.currentTime() - data.timestamp);
       if (timeDiff > 1) {
         playerRef.current.currentTime(data.timestamp);
@@ -181,7 +161,7 @@ export default function WatchPartyPlayer({ onClose, groupId }: WatchPartyPlayerP
     };
 
     const handlePauseSync = (data: any) => {
-      if (!playerRef.current) return; // Ignore if no player
+      if (!playerRef.current) return;
       const timeDiff = Math.abs(playerRef.current.currentTime() - data.timestamp);
       if (timeDiff > 1) {
         playerRef.current.currentTime(data.timestamp);
@@ -192,14 +172,12 @@ export default function WatchPartyPlayer({ onClose, groupId }: WatchPartyPlayerP
     };
 
     const handleSeekSync = (data: any) => {
-      if (!playerRef.current) return; // Ignore if no player
+      if (!playerRef.current) return;
       playerRef.current.currentTime(data.timestamp);
     };
 
-    // Handle playback sync request from new members
     const handlePlaybackSyncRequest = async (data: any) => {
-      if (user?.id !== hostId) return; // Only host responds
-      
+      if (user?.id !== hostId) return;
       if (playerRef.current) {
         socketClient.emit('playback_sync_response', {
           groupId,
@@ -210,14 +188,9 @@ export default function WatchPartyPlayer({ onClose, groupId }: WatchPartyPlayerP
       }
     };
 
-    // Handle sync response for new members
     const handlePlaybackSyncResponse = (data: any) => {
       if (!playerRef.current) return;
-      
-      // Set the time to match host
       playerRef.current.currentTime(data.currentTime);
-      
-      // Match playing state
       if (data.isPlaying && playerRef.current.paused()) {
         playerRef.current.play().catch(() => {
           console.log('Autoplay prevented');
@@ -225,7 +198,6 @@ export default function WatchPartyPlayer({ onClose, groupId }: WatchPartyPlayerP
       } else if (!data.isPlaying && !playerRef.current.paused()) {
         playerRef.current.pause();
       }
-      
       console.log('Synced to host:', data);
     };
 
@@ -244,11 +216,10 @@ export default function WatchPartyPlayer({ onClose, groupId }: WatchPartyPlayerP
     };
   }, [user?.id, hostId, groupId]);
 
-  // Handle video call state synchronization across members
+  // Handle video call state synchronization
   useEffect(() => {
     const handleVideoCallSelfStarted = (data: any) => {
       console.log('You initiated the video call');
-      // You started the call, auto-join immediately
       setShowVideoCall(true);
       toast({
         title: 'Video Call Started',
@@ -258,7 +229,6 @@ export default function WatchPartyPlayer({ onClose, groupId }: WatchPartyPlayerP
 
     const handleVideoCallInvitation = (data: any) => {
       console.log('Video call invitation received from:', data.initiatorName);
-      // Show invitation modal for other members
       setVideoCallInvitation({
         initiatorName: data.initiatorName,
         initiatorAvatar: data.initiatorAvatar,
@@ -283,12 +253,10 @@ export default function WatchPartyPlayer({ onClose, groupId }: WatchPartyPlayerP
     };
   }, [groupId, toast]);
 
-  // Broadcast video call state changes
   const handleVideoCallToggle = (newState: boolean) => {
     setShowVideoCall(newState);
 
     if (newState) {
-      // Broadcast that this user is starting a video call
       socketClient.emit('video_call_started', {
         groupId,
         initiatedBy: user?.id,
@@ -297,7 +265,6 @@ export default function WatchPartyPlayer({ onClose, groupId }: WatchPartyPlayerP
         timestamp: new Date().toISOString(),
       });
     } else {
-      // Broadcast that video call is ending
       socketClient.emit('video_call_ended', {
         groupId,
         initiatedBy: user?.id,
@@ -305,12 +272,9 @@ export default function WatchPartyPlayer({ onClose, groupId }: WatchPartyPlayerP
     }
   };
 
-  // Handle video call invitation response
   const handleAcceptVideoCall = () => {
     setShowVideoCall(true);
     setVideoCallInvitation(null);
-    
-    // Notify others that you joined
     socketClient.emit('video_call_join', {
       groupId,
       userId: user?.id,
@@ -325,12 +289,9 @@ export default function WatchPartyPlayer({ onClose, groupId }: WatchPartyPlayerP
 
   const handleLeaveWatchParty = () => {
     socketClient.emit('leave_watch_party', { groupId });
-    
-    // If host is leaving, end the watch party
     if (user?.id === hostId) {
       socketClient.emit('end_watch_party', { groupId });
     }
-    
     onClose();
     toast({
       title: 'Left Watch Party',
@@ -349,21 +310,21 @@ export default function WatchPartyPlayer({ onClose, groupId }: WatchPartyPlayerP
   }
 
   return (
-    <div className="fixed inset-0 bg-black z-50 flex flex-col">
-      {/* Header - Clean and Professional */}
-      <div className="bg-card/90 backdrop-blur-md border-b border-border/50 px-4 py-3 flex items-center justify-between">
+    <div className="fixed inset-0 bg-black z-50 flex flex-col overflow-hidden">
+      {/* HEADER */}
+      <div className="flex-shrink-0 bg-card/90 backdrop-blur-md border-b border-border/50 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3 min-w-0 flex-1">
           <h2 className="text-lg font-semibold truncate text-white">{currentMovie.title}</h2>
           {user?.id === hostId && (
             <span className="text-xs bg-primary/20 text-primary px-2 py-1 rounded">Host</span>
           )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex-shrink-0 flex items-center gap-2">
           <Button
             variant={showVideoCall ? 'default' : 'outline'}
             size="sm"
             onClick={() => handleVideoCallToggle(!showVideoCall)}
-            className="gap-2"
+            className="gap-2 whitespace-nowrap"
           >
             {showVideoCall ? (
               <>
@@ -381,7 +342,7 @@ export default function WatchPartyPlayer({ onClose, groupId }: WatchPartyPlayerP
             variant="ghost"
             size="sm"
             onClick={handleLeaveWatchParty}
-            className="text-red-500 hover:text-red-600 hover:bg-red-500/10"
+            className="text-red-500 hover:text-red-600 hover:bg-red-500/10 whitespace-nowrap"
           >
             <LogOut className="w-4 h-4 mr-2" />
             Leave
@@ -390,25 +351,37 @@ export default function WatchPartyPlayer({ onClose, groupId }: WatchPartyPlayerP
             variant="ghost"
             size="icon"
             onClick={onClose}
-            className="h-9 w-9"
+            className="h-9 w-9 flex-shrink-0"
           >
             <X className="w-5 h-5" />
           </Button>
         </div>
       </div>
 
-      {/* Main Content - Professional Layout */}
-      <div className="flex-1 flex flex-col gap-2 p-4">
-        {/* Movie Player Section */}
-        <div className="flex flex-col gap-2" style={{ height: showVideoCall ? '350px' : '100%' }}>
-          {/* Video Player Container - Always visible */}
-          <div className="flex-1 bg-black rounded-xl overflow-hidden shadow-lg border border-slate-700">
+      {/* MAIN CONTENT - Two sections: Movie and Video Call */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* MOVIE PLAYER SECTION */}
+        <div
+          className="flex flex-col gap-3 p-4 overflow-hidden"
+          style={{
+            flex: showVideoCall ? '0 0 auto' : '1 1 auto',
+          }}
+        >
+          {/* Video Player */}
+          <div
+            className="bg-black rounded-xl overflow-hidden shadow-lg border border-slate-700"
+            style={{
+              width: '100%',
+              height: showVideoCall ? '300px' : '100%',
+              minHeight: showVideoCall ? '300px' : 'auto',
+            }}
+          >
             <div ref={videoRef} className="w-full h-full" />
           </div>
 
-          {/* Movie Volume Control - Professional Styling */}
+          {/* Movie Volume Control */}
           <div className="flex items-center gap-3 bg-card/60 backdrop-blur rounded-lg border border-border/50 px-4 py-2.5 flex-shrink-0">
-            <span className="text-sm font-medium text-white whitespace-nowrap min-w-fit">Movie</span>
+            <span className="text-sm font-medium text-white whitespace-nowrap">Movie</span>
             <input
               type="range"
               min="0"
@@ -422,13 +395,13 @@ export default function WatchPartyPlayer({ onClose, groupId }: WatchPartyPlayerP
           </div>
         </div>
 
-        {/* Video Call Section - Responsive layout when active */}
+        {/* VIDEO CALL SECTION - Only shows when active */}
         {showVideoCall && user && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="flex-1 flex flex-col border-t border-border/50 pt-2 min-h-0 overflow-hidden"
+            className="flex-1 flex flex-col border-t border-border/50 p-4 overflow-hidden gap-3"
           >
             <AgoraVideoCall
               groupId={groupId}
@@ -448,7 +421,7 @@ export default function WatchPartyPlayer({ onClose, groupId }: WatchPartyPlayerP
         )}
       </div>
 
-      {/* Video Call Invitation Modal */}
+      {/* VIDEO CALL INVITATION MODAL */}
       {videoCallInvitation && (
         <VideoCallInvitationModal
           isOpen={!!videoCallInvitation}
