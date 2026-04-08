@@ -16,6 +16,11 @@ export default function WatchPartyChat({ onSendMessage }: WatchPartyChatProps) {
   const { messages } = useWatchPartyStore();
   const { user } = useAuthStore();
 
+  // Debug: Log messages whenever they change
+  useEffect(() => {
+    console.log('Messages in store updated:', messages);
+  }, [messages]);
+
   // Auto scroll to bottom when messages update
   useEffect(() => {
     scrollToBottom();

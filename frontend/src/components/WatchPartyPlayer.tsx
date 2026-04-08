@@ -289,23 +289,30 @@ export default function WatchPartyPlayer({ onClose, groupId }: WatchPartyPlayerP
   // Watch party chat event listener
   useEffect(() => {
     const handleReceiveMessage = (data: any) => {
+      console.log('Watch party message received:', data);
+      
       if (!data || !data.userId) {
         console.warn('Invalid message data received:', data);
         return;
       }
 
-      addMessage({
+      const messageObject = {
         userId: data.userId,
         username: data.username || 'Unknown',
         avatar: data.avatar || '',
         message: data.message || '',
         timestamp: data.timestamp || new Date().toISOString(),
-      });
+      };
+      
+      console.log('Adding message to store:', messageObject);
+      addMessage(messageObject);
     };
 
+    console.log('Setting up watch party message listener');
     socketClient.on('watch_party_receive_message', handleReceiveMessage);
 
     return () => {
+      console.log('Cleaning up watch party message listener');
       socketClient.off('watch_party_receive_message', handleReceiveMessage);
     };
   }, [addMessage]);
@@ -357,13 +364,25 @@ export default function WatchPartyPlayer({ onClose, groupId }: WatchPartyPlayerP
     }
 
     try {
-      socketClient.emit('watch_party_send_message', {
+      const messageData = {
         groupId,
         message: message.trim(),
         userId: user.id,
         username: user.username,
         avatar: user.avatar || '',
+      };
+
+      // Add message to store immediately (optimistic update)
+      addMessage({
+        userId: user.id,
+        username: user.username,
+        avatar: user.avatar || '',
+        message: message.trim(),
+        timestamp: new Date().toISOString(),
       });
+
+      // Emit to backend to broadcast to other users
+      socketClient.emit('watch_party_send_message', messageData);
       console.log('Message sent to watch party:', message);
     } catch (error) {
       console.error('Error sending watch party message:', error);
