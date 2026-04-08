@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect } from 'react';
-import { motion } from 'framer-motion';
 import { X, LogOut, Video, VideoOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useWatchPartyStore } from '@/stores/watchPartyStore';
@@ -441,38 +440,32 @@ export default function WatchPartyPlayer({ onClose, groupId }: WatchPartyPlayerP
             </div>
           </div>
 
-          {/* GROUP INFO COLUMN - 1/3 width */}
-          <div className="w-1/3 bg-card/40 rounded-xl border border-border/50 overflow-hidden min-w-0">
-            <div className="w-full h-full flex items-center justify-center">
-              <p className="text-muted-foreground">Group Info (coming soon)</p>
-            </div>
+          {/* VIDEO CALL COLUMN - 1/3 width */}
+          <div className="w-1/3 bg-card/40 rounded-xl border border-border/50 overflow-hidden min-w-0 flex flex-col">
+            {showVideoCall && user ? (
+              <AgoraVideoCall
+                groupId={groupId}
+                userId={user.id}
+                onParticipantCountChange={setParticipantCount}
+                onCallEnded={() => setShowVideoCall(false)}
+                onError={(error) => {
+                  toast({
+                    title: 'Video Call Error',
+                    description: error,
+                    variant: 'destructive',
+                  });
+                  setShowVideoCall(false);
+                }}
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <p className="text-muted-foreground">Video call will appear here</p>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* BOTTOM ROW: Video Call Participants Grid */}
-        {showVideoCall && user && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="flex-1 border-t border-border/50 pt-3 min-h-0 overflow-hidden"
-          >
-            <AgoraVideoCall
-              groupId={groupId}
-              userId={user.id}
-              onParticipantCountChange={setParticipantCount}
-              onCallEnded={() => setShowVideoCall(false)}
-              onError={(error) => {
-                toast({
-                  title: 'Video Call Error',
-                  description: error,
-                  variant: 'destructive',
-                });
-                setShowVideoCall(false);
-              }}
-            />
-          </motion.div>
-        )}
+
       </div>
 
       {/* Video Call Invitation Modal */}
