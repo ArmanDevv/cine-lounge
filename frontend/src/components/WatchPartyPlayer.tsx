@@ -299,18 +299,19 @@ export default function WatchPartyPlayer({ onClose, groupId }: WatchPartyPlayerP
     };
   }, [groupId, toast]);
 
-  // Watch party chat event listener
+  // Watch party chat event listener - Set up only once per group
   useEffect(() => {
     if (!groupId) {
       console.warn('Cannot set up message listener: no groupId');
       return;
     }
 
+    // Ensure socket is connected
+    socketClient.connect();
     console.log(`Setting up watch party message listener for group ${groupId}`);
-    
-    // Get the current user ID to avoid duplicates
-    const currentUserId = user?.id;
-    
+    console.log('Socket connected:', socketClient.isConnected());
+
+    // Create a stable handler that doesn't depend on closure variables
     const handleReceiveMessage = (data: any) => {
       console.log('Watch party message received from backend:', data);
       
@@ -319,13 +320,19 @@ export default function WatchPartyPlayer({ onClose, groupId }: WatchPartyPlayerP
         return;
       }
 
+      // Get current user ID at the time the message is received
+      const { user: currentUser } = useAuthStore.getState();
+      const currentUserId = currentUser?.id;
+      
+      console.log('Current user ID:', currentUserId, 'Message from:', data.userId);
+      
       // Don't add duplicate messages from current user (already added optimistically)
       if (data.userId === currentUserId) {
-        console.log('Skipping duplicate message from current user, userId:', currentUserId);
+        console.log('Skipping duplicate message from current user');
         return;
       }
 
-      console.log('Message is from different user, adding to store');
+      console.log('Adding message from other user to store');
       const messageObject = {
         userId: data.userId,
         username: data.username || 'Unknown',
@@ -334,22 +341,19 @@ export default function WatchPartyPlayer({ onClose, groupId }: WatchPartyPlayerP
         timestamp: data.timestamp || new Date().toISOString(),
       };
       
-      console.log('Adding message from other user to store:', messageObject);
-      addMessage(messageObject);
+      console.log('Message object:', messageObject);
+      const { addMessage: addMsg } = useWatchPartyStore.getState();
+      addMsg(messageObject);
     };
 
-    // Ensure socket is connected
-    socketClient.connect();
-    console.log('Socket connected:', socketClient.isConnected());
-    console.log('Socket ID:', socketClient.getSocketId());
-    
     socketClient.on('watch_party_receive_message', handleReceiveMessage);
+    console.log('Listener registered for watch_party_receive_message');
 
     return () => {
       console.log(`Cleaning up watch party message listener for group ${groupId}`);
       socketClient.off('watch_party_receive_message', handleReceiveMessage);
     };
-  }, [groupId, addMessage]);
+  }, [groupId]);
 
   // Broadcast video call state changes
   const handleVideoCallToggle = (newState: boolean) => {
