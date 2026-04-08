@@ -71,7 +71,7 @@ export const AgoraVideoCall: React.FC<AgoraVideoCallProps> = ({
     const totalParticipants = remoteVideosRef.current.size + 1;
     
     // Determine grid layout - use regex to update only grid class
-    let newGridClass = 'w-full h-full grid gap-3';
+    let newGridClass = 'w-full h-full grid gap-3 auto-rows-fr';
     
     if (totalParticipants === 2) {
       newGridClass += ' grid-cols-2'; // 2 participants: 50% each
@@ -96,7 +96,7 @@ export const AgoraVideoCall: React.FC<AgoraVideoCallProps> = ({
       if (!videoDiv) {
         videoDiv = document.createElement('div');
         videoDiv.id = `remote-video-${participant.userId}`;
-        videoDiv.className = 'relative bg-slate-800 rounded-lg overflow-hidden shadow-lg border border-slate-700 w-full h-full';
+        videoDiv.className = 'relative bg-slate-800 rounded-lg overflow-hidden shadow-lg border border-slate-700 aspect-square';
         
         const label = document.createElement('div');
         label.className = 'absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2 z-10';
@@ -493,10 +493,10 @@ export const AgoraVideoCall: React.FC<AgoraVideoCallProps> = ({
       </div>
 
       {/* Video Grid Container - Responsive Grid Layout */}
-      <div className="flex-1 overflow-hidden p-3 min-h-0">
-        <div className="w-full h-full grid gap-3 grid-cols-1" id="video-grid-container">
+      <div className="flex-1 overflow-hidden p-3 min-h-0 flex items-center justify-center">
+        <div className="w-full h-full grid gap-3 grid-cols-1 auto-rows-fr justify-items-stretch items-stretch" id="video-grid-container">
           {/* Local Video */}
-          <div className="relative bg-slate-800 rounded-lg overflow-hidden shadow-lg border border-slate-700 w-full h-full">
+          <div className="relative bg-slate-800 rounded-lg overflow-hidden shadow-lg border border-slate-700 aspect-square">
             <div
               ref={localVideoRef}
               className="w-full h-full"
