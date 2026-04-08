@@ -308,15 +308,25 @@ export default function WatchPartyPlayer({ onClose, groupId }: WatchPartyPlayerP
 
     // Ensure socket is connected
     socketClient.connect();
-    console.log(`Setting up watch party message listener for group ${groupId}`);
+    console.log(`%c[LISTENER SETUP] Setting up watch party message listener for group ${groupId}`, 'color: blue; font-weight: bold');
     console.log('Socket connected:', socketClient.isConnected());
+
+    // Test listener - log ALL events on socket to debug
+    const testHandler = (data: any) => {
+      console.log('%c[TEST HANDLER] Got watch_party_receive_message event!', 'color: yellow; font-weight: bold', data);
+    };
 
     // Create a stable handler that doesn't depend on closure variables
     const handleReceiveMessage = (data: any) => {
-      console.log('Watch party message received from backend:', data);
+      console.log(`%c[MESSAGE RECEIVED] Raw data from socket:`, 'color: green; font-weight: bold', data);
       
-      if (!data || !data.userId) {
-        console.warn('Invalid message data received:', data);
+      if (!data) {
+        console.warn('[MESSAGE RECEIVED] Data is null or undefined!');
+        return;
+      }
+
+      if (!data.userId) {
+        console.warn('[MESSAGE RECEIVED] No userId in message data!', data);
         return;
       }
 
@@ -324,15 +334,19 @@ export default function WatchPartyPlayer({ onClose, groupId }: WatchPartyPlayerP
       const { user: currentUser } = useAuthStore.getState();
       const currentUserId = currentUser?.id;
       
-      console.log('Current user ID:', currentUserId, 'Message from:', data.userId);
+      console.log(`%c[DEDUP CHECK]`, 'color: orange', {
+        messageFromUserId: data.userId,
+        currentUserId: currentUserId,
+        isSameUser: data.userId === currentUserId,
+      });
       
       // Don't add duplicate messages from current user (already added optimistically)
       if (data.userId === currentUserId) {
-        console.log('Skipping duplicate message from current user');
+        console.log('[DEDUP] Skipping duplicate message from current user');
         return;
       }
 
-      console.log('Adding message from other user to store');
+      console.log(`%c[ADD MESSAGE] Adding message from OTHER user`, 'color: purple; font-weight: bold');
       const messageObject = {
         userId: data.userId,
         username: data.username || 'Unknown',
@@ -341,17 +355,21 @@ export default function WatchPartyPlayer({ onClose, groupId }: WatchPartyPlayerP
         timestamp: data.timestamp || new Date().toISOString(),
       };
       
-      console.log('Message object:', messageObject);
+      console.log('[ADD MESSAGE] Message object:', messageObject);
       const { addMessage: addMsg } = useWatchPartyStore.getState();
       addMsg(messageObject);
+      console.log('[ADD MESSAGE] Message added to store');
     };
 
+    console.log('[LISTENER SETUP] Registering socketClient listeners...');
     socketClient.on('watch_party_receive_message', handleReceiveMessage);
-    console.log('Listener registered for watch_party_receive_message');
+    socketClient.on('watch_party_receive_message', testHandler);
+    console.log('[LISTENER SETUP] Both listeners registered for watch_party_receive_message');
 
     return () => {
-      console.log(`Cleaning up watch party message listener for group ${groupId}`);
+      console.log(`%c[LISTENER CLEANUP] Cleaning up watch party message listener for group ${groupId}`, 'color: red; font-weight: bold');
       socketClient.off('watch_party_receive_message', handleReceiveMessage);
+      socketClient.off('watch_party_receive_message', testHandler);
     };
   }, [groupId]);
 
@@ -410,6 +428,8 @@ export default function WatchPartyPlayer({ onClose, groupId }: WatchPartyPlayerP
         avatar: user.avatar || '',
       };
 
+      console.log(`%c[SEND MESSAGE]`, 'color: cyan; font-weight: bold', messageData);
+
       // Add message to store immediately (optimistic update)
       addMessage({
         userId: user.id,
@@ -418,10 +438,11 @@ export default function WatchPartyPlayer({ onClose, groupId }: WatchPartyPlayerP
         message: message.trim(),
         timestamp: new Date().toISOString(),
       });
+      console.log('[SEND MESSAGE] Added to store (optimistic)');
 
       // Emit to backend to broadcast to other users
       socketClient.emit('watch_party_send_message', messageData);
-      console.log('Message sent to watch party:', message);
+      console.log('[SEND MESSAGE] Emitted to backend');
     } catch (error) {
       console.error('Error sending watch party message:', error);
       toast({
