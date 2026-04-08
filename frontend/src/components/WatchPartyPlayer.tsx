@@ -349,16 +349,16 @@ export default function WatchPartyPlayer({ onClose, groupId }: WatchPartyPlayerP
   }
 
   return (
-    <div className="fixed inset-0 bg-black z-50 flex flex-col">
-      {/* Header - Clean and Professional */}
-      <div className="bg-card/90 backdrop-blur-md border-b border-border/50 px-4 py-3 flex items-center justify-between">
+    <div className="fixed inset-0 bg-black z-50 flex flex-col h-screen">
+      {/* NAVBAR - Fixed Height */}
+      <div className="bg-card/90 backdrop-blur-md border-b border-border/50 px-4 py-3 flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-3 min-w-0 flex-1">
           <h2 className="text-lg font-semibold truncate text-white">{currentMovie.title}</h2>
           {user?.id === hostId && (
             <span className="text-xs bg-primary/20 text-primary px-2 py-1 rounded">Host</span>
           )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-shrink-0">
           <Button
             variant={showVideoCall ? 'default' : 'outline'}
             size="sm"
@@ -397,38 +397,57 @@ export default function WatchPartyPlayer({ onClose, groupId }: WatchPartyPlayerP
         </div>
       </div>
 
-      {/* Main Content - Professional Layout */}
-      <div className="flex-1 flex flex-col gap-2 p-4">
-        {/* Movie Player Section */}
-        <div className="flex flex-col gap-2" style={{ height: showVideoCall ? '350px' : '100%' }}>
-          {/* Video Player Container - Always visible */}
-          <div className="flex-1 bg-black rounded-xl overflow-hidden shadow-lg border border-slate-700">
-            <div ref={videoRef} className="w-full h-full" />
+      {/* MAIN CONTENT - 100vh - navbar height */}
+      <div className="flex-1 flex flex-col gap-3 p-4 overflow-hidden">
+        
+        {/* TOP ROW: Movie, Chat, Group Info - 3 columns */}
+        <div className="flex gap-3 flex-1 min-h-0">
+          
+          {/* MOVIE COLUMN */}
+          <div className="flex flex-col gap-3 flex-1 min-w-0">
+            {/* Video Player */}
+            <div className="flex-1 bg-black rounded-xl overflow-hidden shadow-lg border border-slate-700 min-h-0">
+              <div ref={videoRef} className="w-full h-full" />
+            </div>
+            
+            {/* Movie Volume Control */}
+            <div className="flex items-center gap-3 bg-card/60 backdrop-blur rounded-lg border border-border/50 px-4 py-2 flex-shrink-0">
+              <span className="text-sm font-medium text-white whitespace-nowrap">Movie</span>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={movieVolume}
+                onChange={(e) => setMovieVolume(Number(e.target.value))}
+                className="flex-1 h-2 bg-slate-700 rounded-full appearance-none cursor-pointer accent-emerald-500"
+                title="Movie volume"
+              />
+              <span className="text-sm font-medium text-white w-8 text-right">{movieVolume}</span>
+            </div>
           </div>
 
-          {/* Movie Volume Control - Professional Styling */}
-          <div className="flex items-center gap-3 bg-card/60 backdrop-blur rounded-lg border border-border/50 px-4 py-2.5 flex-shrink-0">
-            <span className="text-sm font-medium text-white whitespace-nowrap min-w-fit">Movie</span>
-            <input
-              type="range"
-              min="0"
-              max="100"
-              value={movieVolume}
-              onChange={(e) => setMovieVolume(Number(e.target.value))}
-              className="flex-1 h-2 bg-slate-700 rounded-full appearance-none cursor-pointer accent-emerald-500"
-              title="Movie volume"
-            />
-            <span className="text-sm font-medium text-white w-10 text-right">{movieVolume}</span>
+          {/* CHATTING COLUMN - Placeholder */}
+          <div className="flex-1 bg-card/40 rounded-xl border border-border/50 overflow-hidden min-w-0">
+            <div className="w-full h-full flex items-center justify-center">
+              <p className="text-muted-foreground">Chatting (coming soon)</p>
+            </div>
+          </div>
+
+          {/* GROUP INFO COLUMN - Placeholder */}
+          <div className="flex-1 bg-card/40 rounded-xl border border-border/50 overflow-hidden min-w-0">
+            <div className="w-full h-full flex items-center justify-center">
+              <p className="text-muted-foreground">Group Info (coming soon)</p>
+            </div>
           </div>
         </div>
 
-        {/* Video Call Section - Responsive layout when active */}
+        {/* BOTTOM ROW: Video Call Participants Grid */}
         {showVideoCall && user && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="flex-1 flex flex-col border-t border-border/50 pt-2 min-h-0 overflow-hidden"
+            className="flex-1 border-t border-border/50 pt-3 min-h-0 overflow-hidden"
           >
             <AgoraVideoCall
               groupId={groupId}
