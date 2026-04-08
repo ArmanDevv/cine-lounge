@@ -8,7 +8,6 @@ import { socketClient } from '@/services/socketClient';
 import { useToast } from '@/hooks/use-toast';
 import AgoraVideoCall from '@/components/AgoraVideoCall';
 import VideoCallInvitationModal from '@/components/VideoCallInvitationModal';
-import WatchPartyChat from '@/components/WatchPartyChat';
 import videojs from 'video.js';
 import 'video.js/dist/video-js.css';
 
@@ -299,80 +298,6 @@ export default function WatchPartyPlayer({ onClose, groupId }: WatchPartyPlayerP
     };
   }, [groupId, toast]);
 
-  // Watch party chat event listener - Set up only once per group
-  useEffect(() => {
-    if (!groupId) {
-      console.warn('Cannot set up message listener: no groupId');
-      return;
-    }
-
-    // Ensure socket is connected
-    socketClient.connect();
-    console.log(`%c[LISTENER SETUP] Setting up watch party message listener for group ${groupId}`, 'color: blue; font-weight: bold');
-    console.log('Socket connected:', socketClient.isConnected());
-
-    // Test listener - log ALL events on socket to debug
-    const testHandler = (data: any) => {
-      console.log('%c[TEST HANDLER] Got watch_party_receive_message event!', 'color: yellow; font-weight: bold', data);
-    };
-
-    // Create a stable handler that doesn't depend on closure variables
-    const handleReceiveMessage = (data: any) => {
-      console.log(`%c[MESSAGE RECEIVED] Raw data from socket:`, 'color: green; font-weight: bold', data);
-      
-      if (!data) {
-        console.warn('[MESSAGE RECEIVED] Data is null or undefined!');
-        return;
-      }
-
-      if (!data.userId) {
-        console.warn('[MESSAGE RECEIVED] No userId in message data!', data);
-        return;
-      }
-
-      // Get current user ID at the time the message is received
-      const { user: currentUser } = useAuthStore.getState();
-      const currentUserId = currentUser?.id;
-      
-      console.log(`%c[DEDUP CHECK]`, 'color: orange', {
-        messageFromUserId: data.userId,
-        currentUserId: currentUserId,
-        isSameUser: data.userId === currentUserId,
-      });
-      
-      // Don't add duplicate messages from current user (already added optimistically)
-      if (data.userId === currentUserId) {
-        console.log('[DEDUP] Skipping duplicate message from current user');
-        return;
-      }
-
-      console.log(`%c[ADD MESSAGE] Adding message from OTHER user`, 'color: purple; font-weight: bold');
-      const messageObject = {
-        userId: data.userId,
-        username: data.username || 'Unknown',
-        avatar: data.avatar || '',
-        message: data.message || '',
-        timestamp: data.timestamp || new Date().toISOString(),
-      };
-      
-      console.log('[ADD MESSAGE] Message object:', messageObject);
-      const { addMessage: addMsg } = useWatchPartyStore.getState();
-      addMsg(messageObject);
-      console.log('[ADD MESSAGE] Message added to store');
-    };
-
-    console.log('[LISTENER SETUP] Registering socketClient listeners...');
-    socketClient.on('watch_party_receive_message', handleReceiveMessage);
-    socketClient.on('watch_party_receive_message', testHandler);
-    console.log('[LISTENER SETUP] Both listeners registered for watch_party_receive_message');
-
-    return () => {
-      console.log(`%c[LISTENER CLEANUP] Cleaning up watch party message listener for group ${groupId}`, 'color: red; font-weight: bold');
-      socketClient.off('watch_party_receive_message', handleReceiveMessage);
-      socketClient.off('watch_party_receive_message', testHandler);
-    };
-  }, [groupId]);
-
   // Broadcast video call state changes
   const handleVideoCallToggle = (newState: boolean) => {
     setShowVideoCall(newState);
@@ -411,46 +336,6 @@ export default function WatchPartyPlayer({ onClose, groupId }: WatchPartyPlayerP
 
   const handleRejectVideoCall = () => {
     setVideoCallInvitation(null);
-  };
-
-  const handleSendMessage = (message: string) => {
-    if (!message.trim() || !groupId || !user) {
-      console.warn('Cannot send message: missing required data');
-      return;
-    }
-
-    try {
-      const messageData = {
-        groupId,
-        message: message.trim(),
-        userId: user.id,
-        username: user.username,
-        avatar: user.avatar || '',
-      };
-
-      console.log(`%c[SEND MESSAGE]`, 'color: cyan; font-weight: bold', messageData);
-
-      // Add message to store immediately (optimistic update)
-      addMessage({
-        userId: user.id,
-        username: user.username,
-        avatar: user.avatar || '',
-        message: message.trim(),
-        timestamp: new Date().toISOString(),
-      });
-      console.log('[SEND MESSAGE] Added to store (optimistic)');
-
-      // Emit to backend to broadcast to other users
-      socketClient.emit('watch_party_send_message', messageData);
-      console.log('[SEND MESSAGE] Emitted to backend');
-    } catch (error) {
-      console.error('Error sending watch party message:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to send message',
-        variant: 'destructive',
-      });
-    }
   };
 
   const handleLeaveWatchParty = () => {
@@ -530,11 +415,11 @@ export default function WatchPartyPlayer({ onClose, groupId }: WatchPartyPlayerP
       {/* MAIN CONTENT - 100vh - navbar height */}
       <div className="flex-1 flex flex-col gap-3 p-4 overflow-hidden">
         
-        {/* TOP ROW: Movie, Chat, Group Info - 3 columns */}
+        {/* TOP ROW: Movie (2/3) + Group Info (1/3) */}
         <div className="flex gap-3 flex-1 min-h-0">
           
-          {/* MOVIE COLUMN */}
-          <div className="flex flex-col gap-3 flex-1 min-w-0">
+          {/* MOVIE COLUMN - 2/3 width */}
+          <div className="flex flex-col gap-3 flex-2 min-w-0">
             {/* Video Player */}
             <div className="flex-1 bg-black rounded-xl overflow-hidden shadow-lg border border-slate-700 min-h-0">
               <div ref={videoRef} className="w-full h-full" />
@@ -556,10 +441,7 @@ export default function WatchPartyPlayer({ onClose, groupId }: WatchPartyPlayerP
             </div>
           </div>
 
-          {/* CHATTING COLUMN */}
-          <WatchPartyChat onSendMessage={handleSendMessage} />
-
-          {/* GROUP INFO COLUMN - Placeholder */}
+          {/* GROUP INFO COLUMN - 1/3 width */}
           <div className="flex-1 bg-card/40 rounded-xl border border-border/50 overflow-hidden min-w-0">
             <div className="w-full h-full flex items-center justify-center">
               <p className="text-muted-foreground">Group Info (coming soon)</p>
