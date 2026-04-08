@@ -55,10 +55,8 @@ export const AgoraVideoCall: React.FC<AgoraVideoCallProps> = ({
     if (!remoteVideoContainersRef.current) return;
 
     const container = remoteVideoContainersRef.current;
-    const gridContainer = document.getElementById('video-grid-container');
-    if (!gridContainer) return;
 
-    // Clear old videos (remove videos for users who left)
+    // Remove videos for users who left
     const existingVideos = container.querySelectorAll('[id^="remote-video-"]');
     existingVideos.forEach(video => {
       const userId = video.id.replace('remote-video-', '');
@@ -67,28 +65,6 @@ export const AgoraVideoCall: React.FC<AgoraVideoCallProps> = ({
       }
     });
 
-    // Calculate total participants (including self)
-    const totalParticipants = remoteVideosRef.current.size + 1;
-    
-    // Determine grid layout - use regex to update only grid class
-    let newGridClass = 'w-full h-full grid gap-3 auto-rows-fr';
-    
-    if (totalParticipants === 2) {
-      newGridClass += ' grid-cols-2'; // 2 participants: 50% each
-    } else if (totalParticipants === 3) {
-      newGridClass += ' grid-cols-3'; // 3 participants: 33.3% each
-    } else if (totalParticipants === 4) {
-      newGridClass += ' grid-cols-2 grid-rows-2'; // 4 participants: 2x2 grid
-    } else if (totalParticipants > 4) {
-      newGridClass += ' grid-cols-3'; // 5+ participants: 3-col wrap
-    } else {
-      newGridClass += ' grid-cols-1'; // 1 participant: full width
-    }
-
-    // Update grid container's className
-    gridContainer.className = newGridClass;
-    console.log(`Updated grid layout for ${totalParticipants} participants: ${newGridClass}`);
-
     // Add or update remote videos
     remoteVideosRef.current.forEach((participant) => {
       let videoDiv = container.querySelector(`#remote-video-${participant.userId}`) as HTMLElement;
@@ -96,7 +72,9 @@ export const AgoraVideoCall: React.FC<AgoraVideoCallProps> = ({
       if (!videoDiv) {
         videoDiv = document.createElement('div');
         videoDiv.id = `remote-video-${participant.userId}`;
-        videoDiv.className = 'relative bg-slate-800 rounded-lg overflow-hidden shadow-lg border border-slate-700 aspect-square';
+        videoDiv.className = 'relative bg-slate-800 rounded-lg overflow-hidden shadow-lg border border-slate-700';
+        videoDiv.style.width = '400px';
+        videoDiv.style.height = '400px';
         
         const label = document.createElement('div');
         label.className = 'absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2 z-10';
@@ -111,13 +89,18 @@ export const AgoraVideoCall: React.FC<AgoraVideoCallProps> = ({
         // Clear old canvas/video elements
         const oldElements = videoDiv.querySelectorAll('video, canvas');
         oldElements.forEach(el => {
-          if (el !== label) el.remove();
+          if (el?.parentElement === videoDiv) el.remove();
         });
 
         try {
           participant.videoTrack.play(videoDiv);
           console.log('Playing video for:', participant.userId);
         } catch (error) {
+          console.error('Error playing video:', error);
+        }
+      }
+    });
+  }, []);
           console.error('Error playing video:', error);
         }
       }
@@ -492,11 +475,11 @@ export const AgoraVideoCall: React.FC<AgoraVideoCallProps> = ({
         </div>
       </div>
 
-      {/* Video Grid Container - Responsive Grid Layout */}
+      {/* Video Grid Container - Fixed Square Size */}
       <div className="flex-1 overflow-hidden p-3 min-h-0 flex items-center justify-center">
-        <div className="w-full h-full grid gap-3 grid-cols-1 auto-rows-fr justify-items-stretch items-stretch" id="video-grid-container">
+        <div className="flex flex-wrap gap-3 justify-center items-start content-start" id="video-grid-container">
           {/* Local Video */}
-          <div className="relative bg-slate-800 rounded-lg overflow-hidden shadow-lg border border-slate-700 aspect-square">
+          <div className="relative bg-slate-800 rounded-lg overflow-hidden shadow-lg border border-slate-700" style={{ width: '400px', height: '400px' }}>
             <div
               ref={localVideoRef}
               className="w-full h-full"
@@ -510,7 +493,7 @@ export const AgoraVideoCall: React.FC<AgoraVideoCallProps> = ({
               <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm">
                 <div className="flex flex-col items-center gap-2">
                   <div className="w-8 h-8 border-3 border-white border-t-transparent rounded-full animate-spin" />
-                  <p className="text-white text-sm">Initializing video...</p>
+                  <p className="text-white text-sm">Initializing...</p>
                 </div>
               </div>
             )}
