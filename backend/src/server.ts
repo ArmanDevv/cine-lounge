@@ -162,7 +162,8 @@ io.on('connection', (socket) => {
       }
 
       socket.join(`watch_party:${groupId}`);
-      console.log(`Watch party started in group ${groupId} by ${hostUsername}`);
+      console.log(`[WP] Watch party started in group ${groupId} by ${hostUsername}`);
+      console.log(`[WP] Host socket ${socket.id} joined watch_party:${groupId}`);
 
       // Broadcast to BOTH group members (so non-watchers get notified) 
       // AND watch_party room (for synchronization)
@@ -202,7 +203,8 @@ io.on('connection', (socket) => {
       socket.data.username = username;
       socket.data.avatar = avatar;
       
-      console.log(`User ${username} (${userId}) joined watch party in group ${groupId}`);
+      console.log(`[WP] User ${username} (${userId}) joined watch party in group ${groupId}`);
+      console.log(`[WP] Socket ${socket.id} joined watch_party:${groupId}`);
 
       io.to(`watch_party:${groupId}`).emit('watch_party_member_joined', {
         userId,
@@ -213,6 +215,10 @@ io.on('connection', (socket) => {
         hostUsername,
         hostAvatar,
       });
+      
+      // Log room size
+      const room = io.sockets.adapter.rooms.get(`watch_party:${groupId}`);
+      console.log(`[WP] Room watch_party:${groupId} now has ${room?.size || 0} members`);
     } catch (error) {
       console.error('Error joining watch party:', error);
     }
@@ -445,16 +451,23 @@ io.on('connection', (socket) => {
         return;
       }
 
-      console.log(`Message in watch party ${groupId} from ${username}: ${message}`);
+      console.log(`[WP CHAT] Message in watch party ${groupId} from ${username} (${userId}): ${message}`);
 
       // Broadcast to all watch party members (not saved to database)
-      io.to(`watch_party:${groupId}`).emit('watch_party_receive_message', {
+      const broadcastData = {
         userId,
         username,
         avatar,
         message,
         timestamp: new Date().toISOString(),
-      });
+      };
+      
+      console.log(`[WP CHAT] Broadcasting to watch_party:${groupId}`, broadcastData);
+      io.to(`watch_party:${groupId}`).emit('watch_party_receive_message', broadcastData);
+      
+      // Count members in room for debugging
+      const room = io.sockets.adapter.rooms.get(`watch_party:${groupId}`);
+      console.log(`[WP CHAT] Room watch_party:${groupId} has ${room?.size || 0} members`);
     } catch (error) {
       console.error('Error sending watch party message:', error);
     }

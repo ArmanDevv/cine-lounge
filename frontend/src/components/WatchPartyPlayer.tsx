@@ -44,6 +44,19 @@ export default function WatchPartyPlayer({ onClose, groupId }: WatchPartyPlayerP
     addMessage,
   } = useWatchPartyStore();
 
+  // Debug: Log component state
+  useEffect(() => {
+    console.log(`%c=== WatchPartyPlayer Mounted ===`, 'color: yellow; font-weight: bold');
+    console.log('GroupId:', groupId);
+    console.log('User ID:', user?.id);
+    console.log('User:', user?.username);
+    console.log('Socket connected:', socketClient.isConnected());
+    
+    return () => {
+      console.log(`%c=== WatchPartyPlayer Unmounted ===`, 'color: red; font-weight: bold');
+    };
+  }, [groupId, user?.id]);
+
   // Initialize video player
   useEffect(() => {
     if (!currentMovie?.videoUrl || !videoRef.current) return;
@@ -293,9 +306,11 @@ export default function WatchPartyPlayer({ onClose, groupId }: WatchPartyPlayerP
       return;
     }
 
-    // Ensure socket is connected
-    socketClient.connect();
-
+    console.log(`Setting up watch party message listener for group ${groupId}`);
+    
+    // Get the current user ID to avoid duplicates
+    const currentUserId = user?.id;
+    
     const handleReceiveMessage = (data: any) => {
       console.log('Watch party message received from backend:', data);
       
@@ -305,11 +320,12 @@ export default function WatchPartyPlayer({ onClose, groupId }: WatchPartyPlayerP
       }
 
       // Don't add duplicate messages from current user (already added optimistically)
-      if (data.userId === user?.id) {
-        console.log('Skipping duplicate message from current user');
+      if (data.userId === currentUserId) {
+        console.log('Skipping duplicate message from current user, userId:', currentUserId);
         return;
       }
 
+      console.log('Message is from different user, adding to store');
       const messageObject = {
         userId: data.userId,
         username: data.username || 'Unknown',
@@ -322,7 +338,8 @@ export default function WatchPartyPlayer({ onClose, groupId }: WatchPartyPlayerP
       addMessage(messageObject);
     };
 
-    console.log(`Setting up watch party message listener for group ${groupId}`);
+    // Ensure socket is connected
+    socketClient.connect();
     console.log('Socket connected:', socketClient.isConnected());
     console.log('Socket ID:', socketClient.getSocketId());
     
@@ -332,7 +349,7 @@ export default function WatchPartyPlayer({ onClose, groupId }: WatchPartyPlayerP
       console.log(`Cleaning up watch party message listener for group ${groupId}`);
       socketClient.off('watch_party_receive_message', handleReceiveMessage);
     };
-  }, [addMessage, groupId, user?.id]);
+  }, [groupId, addMessage]);
 
   // Broadcast video call state changes
   const handleVideoCallToggle = (newState: boolean) => {
