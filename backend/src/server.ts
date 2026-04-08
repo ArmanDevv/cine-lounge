@@ -435,6 +435,31 @@ io.on('connection', (socket) => {
     }
   });
 
+  // Watch party chat event (ephemeral, not saved to database)
+  socket.on('watch_party_send_message', (data: any) => {
+    try {
+      const { groupId, message, userId, username, avatar } = data;
+
+      if (!groupId || !message || !userId || !username) {
+        console.error('Invalid watch party message data:', data);
+        return;
+      }
+
+      console.log(`Message in watch party ${groupId} from ${username}: ${message}`);
+
+      // Broadcast to all watch party members (not saved to database)
+      io.to(`watch_party:${groupId}`).emit('watch_party_receive_message', {
+        userId,
+        username,
+        avatar,
+        message,
+        timestamp: new Date().toISOString(),
+      });
+    } catch (error) {
+      console.error('Error sending watch party message:', error);
+    }
+  });
+
   socket.on('disconnect', () => {
     console.log(`User disconnected: ${socket.id}`);
   });

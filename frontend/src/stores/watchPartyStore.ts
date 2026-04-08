@@ -8,6 +8,14 @@ export interface WatchPartyMember {
   isHost: boolean;
 }
 
+export interface WatchPartyChatMessage {
+  userId: string;
+  username: string;
+  avatar: string;
+  message: string;
+  timestamp: string;
+}
+
 export interface WatchPartyState {
   isActive: boolean;
   groupId: string | null;
@@ -15,6 +23,7 @@ export interface WatchPartyState {
   currentTime: number;
   isPlaying: boolean;
   members: WatchPartyMember[];
+  messages: WatchPartyChatMessage[];
   hostId: string | null;
 
   // Actions
@@ -23,6 +32,7 @@ export interface WatchPartyState {
   updatePlaybackState: (currentTime: number, isPlaying: boolean) => void;
   addMember: (member: WatchPartyMember) => void;
   removeMember: (userId: string) => void;
+  addMessage: (message: WatchPartyChatMessage) => void;
   endWatchParty: () => void;
 }
 
@@ -33,6 +43,7 @@ export const useWatchPartyStore = create<WatchPartyState>((set) => ({
   currentTime: 0,
   isPlaying: false,
   members: [],
+  messages: [],
   hostId: null,
 
   startWatchParty: (groupId, movie, hostId, hostUsername, hostAvatar) => {
@@ -51,6 +62,7 @@ export const useWatchPartyStore = create<WatchPartyState>((set) => ({
           isHost: true,
         },
       ],
+      messages: [],
     });
   },
 
@@ -60,6 +72,7 @@ export const useWatchPartyStore = create<WatchPartyState>((set) => ({
       groupId,
       currentMovie: movie,
       members: [...state.members, member],
+      messages: [],
     }));
   },
 
@@ -82,6 +95,12 @@ export const useWatchPartyStore = create<WatchPartyState>((set) => ({
     }));
   },
 
+  addMessage: (message) => {
+    set((state) => ({
+      messages: [...state.messages, message],
+    }));
+  },
+
   endWatchParty: () => {
     set({
       isActive: false,
@@ -90,6 +109,7 @@ export const useWatchPartyStore = create<WatchPartyState>((set) => ({
       currentTime: 0,
       isPlaying: false,
       members: [],
+      messages: [],
       hostId: null,
     });
   },

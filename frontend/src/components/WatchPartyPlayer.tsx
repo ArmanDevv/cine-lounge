@@ -8,6 +8,7 @@ import { socketClient } from '@/services/socketClient';
 import { useToast } from '@/hooks/use-toast';
 import AgoraVideoCall from '@/components/AgoraVideoCall';
 import VideoCallInvitationModal from '@/components/VideoCallInvitationModal';
+import WatchPartyChat from '@/components/WatchPartyChat';
 import videojs from 'video.js';
 import 'video.js/dist/video-js.css';
 
@@ -38,7 +39,9 @@ export default function WatchPartyPlayer({ onClose, groupId }: WatchPartyPlayerP
     isPlaying,
     members,
     hostId,
+    groupId: storeGroupId,
     updatePlaybackState,
+    addMessage,
   } = useWatchPartyStore();
 
   // Initialize video player
@@ -283,6 +286,30 @@ export default function WatchPartyPlayer({ onClose, groupId }: WatchPartyPlayerP
     };
   }, [groupId, toast]);
 
+  // Watch party chat event listener
+  useEffect(() => {
+    const handleReceiveMessage = (data: any) => {
+      if (!data || !data.userId) {
+        console.warn('Invalid message data received:', data);
+        return;
+      }
+
+      addMessage({
+        userId: data.userId,
+        username: data.username || 'Unknown',
+        avatar: data.avatar || '',
+        message: data.message || '',
+        timestamp: data.timestamp || new Date().toISOString(),
+      });
+    };
+
+    socketClient.on('watch_party_receive_message', handleReceiveMessage);
+
+    return () => {
+      socketClient.off('watch_party_receive_message', handleReceiveMessage);
+    };
+  }, [addMessage]);
+
   // Broadcast video call state changes
   const handleVideoCallToggle = (newState: boolean) => {
     setShowVideoCall(newState);
@@ -321,6 +348,31 @@ export default function WatchPartyPlayer({ onClose, groupId }: WatchPartyPlayerP
 
   const handleRejectVideoCall = () => {
     setVideoCallInvitation(null);
+  };
+
+  const handleSendMessage = (message: string) => {
+    if (!message.trim() || !groupId || !user) {
+      console.warn('Cannot send message: missing required data');
+      return;
+    }
+
+    try {
+      socketClient.emit('watch_party_send_message', {
+        groupId,
+        message: message.trim(),
+        userId: user.id,
+        username: user.username,
+        avatar: user.avatar || '',
+      });
+      console.log('Message sent to watch party:', message);
+    } catch (error) {
+      console.error('Error sending watch party message:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to send message',
+        variant: 'destructive',
+      });
+    }
   };
 
   const handleLeaveWatchParty = () => {
@@ -426,12 +478,8 @@ export default function WatchPartyPlayer({ onClose, groupId }: WatchPartyPlayerP
             </div>
           </div>
 
-          {/* CHATTING COLUMN - Placeholder */}
-          <div className="flex-1 bg-card/40 rounded-xl border border-border/50 overflow-hidden min-w-0">
-            <div className="w-full h-full flex items-center justify-center">
-              <p className="text-muted-foreground">Chatting (coming soon)</p>
-            </div>
-          </div>
+          {/* CHATTING COLUMN */}
+          <WatchPartyChat onSendMessage={handleSendMessage} />
 
           {/* GROUP INFO COLUMN - Placeholder */}
           <div className="flex-1 bg-card/40 rounded-xl border border-border/50 overflow-hidden min-w-0">
