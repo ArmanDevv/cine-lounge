@@ -288,11 +288,25 @@ export default function WatchPartyPlayer({ onClose, groupId }: WatchPartyPlayerP
 
   // Watch party chat event listener
   useEffect(() => {
+    if (!groupId) {
+      console.warn('Cannot set up message listener: no groupId');
+      return;
+    }
+
+    // Ensure socket is connected
+    socketClient.connect();
+
     const handleReceiveMessage = (data: any) => {
-      console.log('Watch party message received:', data);
+      console.log('Watch party message received from backend:', data);
       
       if (!data || !data.userId) {
         console.warn('Invalid message data received:', data);
+        return;
+      }
+
+      // Don't add duplicate messages from current user (already added optimistically)
+      if (data.userId === user?.id) {
+        console.log('Skipping duplicate message from current user');
         return;
       }
 
@@ -304,18 +318,21 @@ export default function WatchPartyPlayer({ onClose, groupId }: WatchPartyPlayerP
         timestamp: data.timestamp || new Date().toISOString(),
       };
       
-      console.log('Adding message to store:', messageObject);
+      console.log('Adding message from other user to store:', messageObject);
       addMessage(messageObject);
     };
 
-    console.log('Setting up watch party message listener');
+    console.log(`Setting up watch party message listener for group ${groupId}`);
+    console.log('Socket connected:', socketClient.isConnected());
+    console.log('Socket ID:', socketClient.getSocketId());
+    
     socketClient.on('watch_party_receive_message', handleReceiveMessage);
 
     return () => {
-      console.log('Cleaning up watch party message listener');
+      console.log(`Cleaning up watch party message listener for group ${groupId}`);
       socketClient.off('watch_party_receive_message', handleReceiveMessage);
     };
-  }, [addMessage]);
+  }, [addMessage, groupId, user?.id]);
 
   // Broadcast video call state changes
   const handleVideoCallToggle = (newState: boolean) => {

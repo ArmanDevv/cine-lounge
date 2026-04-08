@@ -149,6 +149,14 @@ class SocketClient {
   emit(event: string, data?: any) {
     this.socket?.emit(event, data);
   }
+
+  isConnected(): boolean {
+    return this.socket?.connected ?? false;
+  }
+
+  getSocketId(): string | null {
+    return this.socket?.id ?? null;
+  }
 }
 
 export const socketClient = new SocketClient();
