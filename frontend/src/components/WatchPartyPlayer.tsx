@@ -419,7 +419,7 @@ export default function WatchPartyPlayer({ onClose, groupId }: WatchPartyPlayerP
         <div className="flex gap-3 flex-1 min-h-0">
           
           {/* MOVIE COLUMN - 2/3 width */}
-          <div className="flex flex-col gap-3 flex-2 min-w-0">
+          <div className="flex flex-col gap-3 w-2/3 min-w-0">
             {/* Video Player */}
             <div className="flex-1 bg-black rounded-xl overflow-hidden shadow-lg border border-slate-700 min-h-0">
               <div ref={videoRef} className="w-full h-full" />
@@ -442,7 +442,7 @@ export default function WatchPartyPlayer({ onClose, groupId }: WatchPartyPlayerP
           </div>
 
           {/* GROUP INFO COLUMN - 1/3 width */}
-          <div className="flex-1 bg-card/40 rounded-xl border border-border/50 overflow-hidden min-w-0">
+          <div className="w-1/3 bg-card/40 rounded-xl border border-border/50 overflow-hidden min-w-0">
             <div className="w-full h-full flex items-center justify-center">
               <p className="text-muted-foreground">Group Info (coming soon)</p>
             </div>
