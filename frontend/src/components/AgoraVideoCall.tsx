@@ -101,11 +101,7 @@ export const AgoraVideoCall: React.FC<AgoraVideoCallProps> = ({
       }
     });
   }, []);
-          console.error('Error playing video:', error);
-        }
-      }
-    });
-  }, []);
+
 
   // Handle remote user publishing video/audio
   const handleUserPublished = useCallback(
