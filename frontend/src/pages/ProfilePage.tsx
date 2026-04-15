@@ -4,9 +4,7 @@ import {
   User, 
   Edit2, 
   Save, 
-  Clock, 
-  Heart, 
-  ListVideo,
+  Clock,
   Settings,
   LogOut,
   Calendar,
@@ -21,21 +19,15 @@ import { useMovieStore } from '@/stores/movieStore';
 import { subscriptionService } from '@/services/subscriptionService';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
-import { mockMovies } from '@/data/mockData';
-import { usePlaylistStore } from '@/stores/playlistStore';
 
 export default function ProfilePage() {
   const { user, logout, setUser } = useAuthStore();
   const [isEditing, setIsEditing] = useState(false);
   const [username, setUsername] = useState(user?.username || '');
   const { watchHistory, fetchWatchHistory } = useMovieStore();
-  const { playlists: allPlaylists, loadPlaylists } = usePlaylistStore();
-  const playlists = allPlaylists.filter(p => p.ownerId === user?.id);
-  const favoriteMovies = mockMovies.slice(0, 4);
 
   useEffect(() => {
     fetchWatchHistory();
-    loadPlaylists();
   }, []);
 
   const handleSave = () => {
@@ -183,14 +175,6 @@ export default function ProfilePage() {
               <Clock className="w-4 h-4" />
               Watch History
             </TabsTrigger>
-            <TabsTrigger value="favorites" className="flex items-center gap-2">
-              <Heart className="w-4 h-4" />
-              Favorites
-            </TabsTrigger>
-            <TabsTrigger value="playlists" className="flex items-center gap-2">
-              <ListVideo className="w-4 h-4" />
-              Playlists
-            </TabsTrigger>
             <TabsTrigger value="settings" className="flex items-center gap-2">
               <Settings className="w-4 h-4" />
               Settings
@@ -208,53 +192,6 @@ export default function ProfilePage() {
                     <p className="mt-2 text-xs text-muted-foreground">
                       Last watched: {new Date(item.lastWatched).toLocaleDateString()}
                     </p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </TabsContent>
-
-          {/* Favorites */}
-          <TabsContent value="favorites">
-            <div className="space-y-4">
-              <h2 className="text-xl font-semibold">Favorite Movies</h2>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                {favoriteMovies.map((movie) => (
-                  <MovieCard key={movie.id} movie={movie} size="md" />
-                ))}
-              </div>
-            </div>
-          </TabsContent>
-
-          {/* Playlists */}
-          <TabsContent value="playlists">
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold">My Playlists</h2>
-                <Button>Create Playlist</Button>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {playlists.map((playlist) => (
-                  <div
-                    key={playlist.id}
-                    className="glass-panel rounded-xl p-4 flex gap-4 cursor-pointer hover:bg-accent/50 transition-colors"
-                  >
-                    <img
-                      src={playlist.cover || playlist.movies[0]?.poster}
-                      alt={playlist.name}
-                      className="w-24 h-24 object-cover rounded-lg"
-                    />
-                    <div>
-                      <h3 className="font-semibold">{playlist.name}</h3>
-                      <p className="text-sm text-muted-foreground">
-                        {playlist.movies.length} movies
-                      </p>
-                      {playlist.description && (
-                        <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
-                          {playlist.description}
-                        </p>
-                      )}
-                    </div>
                   </div>
                 ))}
               </div>
