@@ -110,11 +110,11 @@ export default function MovieDetailsPage() {
             animate={{ opacity: 1, y: 0 }}
             className="flex flex-col sm:flex-row gap-3 sm:gap-6 md:gap-8 items-start w-full"
           >
-            {/* Poster */}
+            {/* Poster - Hidden on mobile */}
             <img
               src={movie.thumbnailUrl}
               alt={movie.title}
-              className="w-32 h-48 sm:w-48 md:w-64 rounded-lg sm:rounded-xl shadow-2xl flex-shrink-0"
+              className="hidden sm:block w-32 h-48 sm:w-48 md:w-64 rounded-lg sm:rounded-xl shadow-2xl flex-shrink-0"
             />
 
             {/* Info */}
@@ -191,17 +191,6 @@ export default function MovieDetailsPage() {
             </div>
           </section>
         )}
-
-        {/* Trailer Section */}
-        <section className="mb-12">
-          <h2 className="text-xl font-semibold mb-4">Trailer</h2>
-          <div className="aspect-video bg-card rounded-xl flex items-center justify-center border border-border">
-            <Button size="lg" className="btn-cinema">
-              <Play className="w-6 h-6 mr-2 fill-current" />
-              Watch Trailer
-            </Button>
-          </div>
-        </section>
 
         {/* Comments Section */}
         <section className="mb-12">

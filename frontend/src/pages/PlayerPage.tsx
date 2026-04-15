@@ -178,18 +178,6 @@ export default function PlayerPage() {
             </Link>
           </div>
 
-          <div className="absolute top-4 right-4 z-10">
-            <Button
-              variant={isWatchParty ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setIsWatchParty(!isWatchParty)}
-              className={isWatchParty ? 'bg-primary' : ''}
-            >
-              <Users className="w-4 h-4 mr-2" />
-              Watch Party
-            </Button>
-          </div>
-
           <div className="w-full aspect-video bg-black">
             {movie?.videoUrl && (
               <div ref={videoRef} className="w-full h-full">
