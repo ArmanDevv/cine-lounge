@@ -166,7 +166,7 @@ export default function PlayerPage() {
   }
 
   return (
-    <div className="relative bg-background min-h-screen">
+    <div className="relative bg-background min-h-screen overflow-x-hidden">
       {/* Video Player Container */}
       <div className="max-w-6xl mx-auto px-4 pt-8 pb-12">
         <div className="relative bg-black rounded-lg overflow-hidden">

@@ -12,10 +12,10 @@ export function MainLayout() {
   const showSidebar = sidebarPages.some(page => location.pathname.startsWith(page));
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background overflow-x-hidden">
       <Navbar />
       
-      <div className="flex">
+      <div className="flex w-full">
         {showSidebar && <Sidebar />}
         
         <motion.main
@@ -23,7 +23,7 @@ export function MainLayout() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.3 }}
-          className={`flex-1 ${showSidebar ? 'md:ml-56' : ''}`}
+          className={`flex-1 w-full overflow-x-hidden ${showSidebar ? 'md:ml-56' : ''}`}
         >
           <Outlet />
           <Footer />

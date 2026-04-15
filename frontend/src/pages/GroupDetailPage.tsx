@@ -394,7 +394,7 @@ export default function GroupDetailPage() {
   }
 
   return (
-    <div className="min-h-screen pt-16">
+    <div className="min-h-screen pt-16 overflow-x-hidden">
       <div className="flex h-[calc(100vh-4rem)]">
         {/* Main Chat Area */}
         <div className="flex-1 flex flex-col">

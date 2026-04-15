@@ -44,7 +44,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row">
+    <div className="min-h-screen flex flex-col lg:flex-row overflow-x-hidden">
       {/* Right Side - Image (moved to top on mobile, hidden on mobile) */}
       <div className="hidden lg:flex lg:flex-1 relative overflow-hidden items-center justify-center">
         <div

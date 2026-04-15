@@ -55,7 +55,7 @@ export function HeroBanner({ movies }: HeroBannerProps) {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -30 }}
           transition={{ duration: 0.6, delay: 0.2 }}
-          className="max-w-2xl w-full"
+          className="max-w-full sm:max-w-2xl w-full"
         >
           {/* Title */}
           <h1 className="font-display text-3xl sm:text-4xl md:text-6xl lg:text-7xl xl:text-8xl text-foreground text-shadow-lg mb-2 sm:mb-3 md:mb-4 leading-tight tracking-wide">

@@ -77,7 +77,7 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="min-h-screen pt-20 pb-12">
+    <div className="min-h-screen pt-20 pb-12 overflow-x-hidden">
       {/* Profile Header */}
       <div className="relative">
         {/* Cover Image */}

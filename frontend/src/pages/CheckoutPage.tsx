@@ -177,7 +177,7 @@ export default function CheckoutPage() {
   if (!plan) return <div className="min-h-screen flex items-center justify-center text-xs sm:text-base text-muted-foreground">Invalid plan</div>;
 
   return (
-    <div className="min-h-screen pt-16 sm:pt-20 px-3 sm:px-4 md:px-6 pb-8 sm:pb-12">
+    <div className="min-h-screen pt-16 sm:pt-20 px-3 sm:px-4 md:px-6 pb-8 sm:pb-12 overflow-x-hidden">
       <h1 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">Checkout</h1>
       <div className="max-w-sm mx-auto p-4 sm:p-6 border rounded-lg bg-card/50">
         <h2 className="text-lg sm:text-xl font-semibold mb-1 sm:mb-2">{plan.name}</h2>

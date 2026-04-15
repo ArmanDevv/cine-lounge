@@ -60,7 +60,7 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row">
+    <div className="min-h-screen flex flex-col lg:flex-row overflow-x-hidden">
       {/* Left Side - Image (hidden on mobile) */}
       <div className="hidden lg:flex lg:flex-1 relative overflow-hidden items-center justify-center">
         <div

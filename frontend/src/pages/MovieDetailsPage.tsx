@@ -93,7 +93,7 @@ export default function MovieDetailsPage() {
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen overflow-x-hidden">
       {/* Hero Banner */}
       <div className="relative h-[50vh] sm:h-[60vh] md:h-[70vh] overflow-hidden">
         <div

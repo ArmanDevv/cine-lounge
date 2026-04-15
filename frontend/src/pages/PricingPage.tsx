@@ -50,7 +50,7 @@ export default function PricingPage() {
   }
 
   return (
-    <div className="min-h-screen pt-16 sm:pt-20 px-3 sm:px-4 md:px-6 lg:px-8 pb-8 sm:pb-12">
+    <div className="min-h-screen pt-16 sm:pt-20 px-3 sm:px-4 md:px-6 lg:px-8 pb-8 sm:pb-12 overflow-x-hidden">
       <div className="max-w-5xl mx-auto">
         <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-center mb-1 sm:mb-2">Simple, Transparent Pricing</h1>
         <p className="text-center text-xs sm:text-sm md:text-base text-muted-foreground mb-8 sm:mb-12">Choose the plan that fits your viewing habits</p>

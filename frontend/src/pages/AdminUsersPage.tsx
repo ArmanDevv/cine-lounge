@@ -52,7 +52,7 @@ export default function AdminUsersPage() {
   };
 
   return (
-    <div className="min-h-screen pt-20 pb-12 px-4 md:px-8">
+    <div className="min-h-screen pt-20 pb-12 px-4 md:px-8 overflow-x-hidden">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}

@@ -93,7 +93,7 @@ export default function HomePage() {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="min-h-screen"
+      className="min-h-screen overflow-x-hidden"
     >
       {/* Hero Banner */}
       <HeroBanner movies={featuredForBanner} />
