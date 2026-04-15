@@ -11,7 +11,7 @@ export function Footer() {
             <Link to="/" className="flex items-center gap-2 mb-4">
               <Film className="w-8 h-8 text-primary" />
               <span className="font-display text-xl text-foreground tracking-wider">
-                CINEVERSE
+                DTPLEX
               </span>
             </Link>
             <p className="text-sm text-muted-foreground mb-4">
