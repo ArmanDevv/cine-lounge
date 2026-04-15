@@ -50,14 +50,14 @@ export default function PricingPage() {
   }
 
   return (
-    <div className="min-h-screen pt-20 px-4 pb-12">
+    <div className="min-h-screen pt-16 sm:pt-20 px-3 sm:px-4 md:px-6 lg:px-8 pb-8 sm:pb-12">
       <div className="max-w-5xl mx-auto">
-        <h1 className="text-4xl font-bold text-center mb-2">Simple, Transparent Pricing</h1>
-        <p className="text-center text-muted-foreground mb-12">Choose the plan that fits your viewing habits</p>
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-center mb-1 sm:mb-2">Simple, Transparent Pricing</h1>
+        <p className="text-center text-xs sm:text-sm md:text-base text-muted-foreground mb-8 sm:mb-12">Choose the plan that fits your viewing habits</p>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
           {plans.length === 0 ? (
-            <div className="col-span-1 md:col-span-3 text-center text-muted-foreground">
+            <div className="col-span-1 sm:col-span-2 md:col-span-3 text-center text-xs sm:text-base text-muted-foreground">
               No subscription plans available right now. 
               <button className="ml-2 text-primary underline" onClick={handleRetry}>Retry</button>
             </div>
@@ -65,28 +65,28 @@ export default function PricingPage() {
             plans.map((plan, idx) => (
             <div
               key={plan.id}
-              className={`relative p-6 rounded-lg border transition-all ${
+              className={`relative p-4 sm:p-6 rounded-lg border transition-all ${
                 idx === 1
-                  ? 'border-primary bg-primary/5 ring-2 ring-primary md:scale-105'
+                  ? 'border-primary bg-primary/5 ring-2 ring-primary sm:scale-105'
                   : 'border-border hover:border-primary/50'
               }`}
             >
               {idx === 1 && (
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2">
-                  <span className="bg-primary text-primary-foreground text-xs px-3 py-1 rounded-full">POPULAR</span>
+                  <span className="bg-primary text-primary-foreground text-xs px-2 sm:px-3 py-0.5 sm:py-1 rounded-full font-semibold">POPULAR</span>
                 </div>
               )}
 
-              <h2 className="text-xl font-semibold mb-2">{plan.name}</h2>
-              <p className="text-sm text-muted-foreground mb-4">{plan.description}</p>
+              <h2 className="text-base sm:text-xl font-semibold mb-1 sm:mb-2">{plan.name}</h2>
+              <p className="text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4">{plan.description}</p>
 
-              <div className="mb-6">
-                <span className="text-3xl font-bold">₹{plan.price}</span>
-                <span className="text-muted-foreground ml-2">/ {plan.durationDays} days</span>
+              <div className="mb-4 sm:mb-6">
+                <span className="text-2xl sm:text-3xl font-bold">₹{plan.price}</span>
+                <span className="text-xs sm:text-sm text-muted-foreground ml-2">/ {plan.durationDays} days</span>
               </div>
 
               <Button
-                className={`w-full mb-6 ${
+                className={`w-full mb-4 sm:mb-6 text-xs sm:text-base h-9 sm:h-10 ${
                   idx === 1 ? 'btn-cinema' : 'bg-secondary hover:bg-secondary/80'
                 }`}
                 onClick={() => navigate(`/checkout?plan=${plan.id}`)}
@@ -94,22 +94,22 @@ export default function PricingPage() {
                 Get Started
               </Button>
 
-              <div className="space-y-3 text-sm">
+              <div className="space-y-2 sm:space-y-3 text-xs sm:text-sm">
                 <div className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-green-500" />
+                  <Check className="w-3 h-3 sm:w-4 sm:h-4 text-green-500 flex-shrink-0" />
                   <span>Watch ad-free</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-green-500" />
+                  <Check className="w-3 h-3 sm:w-4 sm:h-4 text-green-500 flex-shrink-0" />
                   <span>HD quality</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-green-500" />
-                  <span>Offline downloads</span>
+                  <Check className="w-3 h-3 sm:w-4 sm:h-4 text-green-500 flex-shrink-0" />
+                  <span>Downloads</span>
                 </div>
                 {plan.durationDays >= 365 && (
                   <div className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-green-500" />
+                    <Check className="w-3 h-3 sm:w-4 sm:h-4 text-green-500 flex-shrink-0" />
                     <span>Save 20%</span>
                   </div>
                 )}
@@ -119,9 +119,9 @@ export default function PricingPage() {
           )}
         </div>
 
-        <div className="mt-12 p-6 bg-secondary/50 rounded-lg text-center">
-          <h3 className="text-lg font-semibold mb-2">Cancel Anytime</h3>
-          <p className="text-muted-foreground">
+        <div className="mt-8 sm:mt-12 p-4 sm:p-6 bg-secondary/50 rounded-lg text-center">
+          <h3 className="text-base sm:text-lg font-semibold mb-1 sm:mb-2">Cancel Anytime</h3>
+          <p className="text-xs sm:text-sm text-muted-foreground">
             No hidden charges. Cancel your subscription whenever you want from your profile.
           </p>
         </div>

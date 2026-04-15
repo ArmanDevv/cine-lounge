@@ -173,32 +173,32 @@ export default function CheckoutPage() {
     }
   };
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin" /></div>;
-  if (!plan) return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Invalid plan</div>;
+  if (loading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-6 h-6 sm:w-8 sm:h-8 animate-spin" /></div>;
+  if (!plan) return <div className="min-h-screen flex items-center justify-center text-xs sm:text-base text-muted-foreground">Invalid plan</div>;
 
   return (
-    <div className="min-h-screen pt-20 px-4">
-      <h1 className="text-2xl font-bold mb-4">Checkout</h1>
-      <div className="max-w-md mx-auto p-6 border rounded-lg">
-        <h2 className="text-xl font-semibold mb-2">{plan.name}</h2>
-        <p className="text-sm text-muted-foreground mb-4">{plan.description}</p>
-        <p className="text-3xl font-bold mb-1">₹{plan.price}</p>
-        <p className="text-xs text-muted-foreground mb-6">{plan.durationDays} days access</p>
+    <div className="min-h-screen pt-16 sm:pt-20 px-3 sm:px-4 md:px-6 pb-8 sm:pb-12">
+      <h1 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">Checkout</h1>
+      <div className="max-w-sm mx-auto p-4 sm:p-6 border rounded-lg bg-card/50">
+        <h2 className="text-lg sm:text-xl font-semibold mb-1 sm:mb-2">{plan.name}</h2>
+        <p className="text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4">{plan.description}</p>
+        <p className="text-2xl sm:text-3xl font-bold mb-0.5 sm:mb-1">₹{plan.price}</p>
+        <p className="text-xs text-muted-foreground mb-4 sm:mb-6">{plan.durationDays} days access</p>
         <Button
-          className="w-full btn-cinema"
+          className="w-full btn-cinema text-xs sm:text-base h-10 sm:h-11"
           onClick={handlePayment}
           disabled={submitting}
         >
           {submitting ? (
             <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 animate-spin" />
               Processing...
             </>
           ) : (
             'Pay with UPI/Card'
           )}
         </Button>
-        <p className="text-xs text-muted-foreground mt-4 text-center">
+        <p className="text-xs text-muted-foreground mt-3 sm:mt-4 text-center">
           💳 Secure payment powered by Razorpay
         </p>
       </div>

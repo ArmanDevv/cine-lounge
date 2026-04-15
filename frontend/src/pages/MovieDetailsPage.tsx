@@ -71,16 +71,16 @@ export default function MovieDetailsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen pt-20 flex items-center justify-center">
-        <p className="text-muted-foreground">Loading...</p>
+      <div className="min-h-screen pt-16 sm:pt-20 flex items-center justify-center">
+        <p className="text-xs sm:text-base text-muted-foreground">Loading...</p>
       </div>
     );
   }
 
   if (!movie) {
     return (
-      <div className="min-h-screen pt-20 flex items-center justify-center">
-        <p className="text-muted-foreground">Movie not found</p>
+      <div className="min-h-screen pt-16 sm:pt-20 flex items-center justify-center">
+        <p className="text-xs sm:text-base text-muted-foreground">Movie not found</p>
       </div>
     );
   }
@@ -95,7 +95,7 @@ export default function MovieDetailsPage() {
   return (
     <div className="min-h-screen">
       {/* Hero Banner */}
-      <div className="relative h-[70vh] overflow-hidden">
+      <div className="relative h-[50vh] sm:h-[60vh] md:h-[70vh] overflow-hidden">
         <div
           className="absolute inset-0 bg-cover bg-center"
           style={{ backgroundImage: `url(${movie.thumbnailUrl})` }}
@@ -104,28 +104,28 @@ export default function MovieDetailsPage() {
           <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
         </div>
 
-        <div className="relative h-full flex items-end pb-12 px-4 md:px-16">
+        <div className="relative h-full flex items-end pb-6 sm:pb-8 md:pb-12 px-3 sm:px-4 md:px-16">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            className="flex flex-col md:flex-row gap-8 items-start"
+            className="flex flex-col sm:flex-row gap-3 sm:gap-6 md:gap-8 items-start w-full"
           >
             {/* Poster */}
             <img
               src={movie.thumbnailUrl}
               alt={movie.title}
-              className="w-48 md:w-64 rounded-xl shadow-2xl hidden md:block"
+              className="w-32 h-48 sm:w-48 md:w-64 rounded-lg sm:rounded-xl shadow-2xl flex-shrink-0"
             />
 
             {/* Info */}
-            <div className="max-w-2xl">
-              <h1 className="font-display text-4xl md:text-6xl text-foreground text-shadow-lg mb-4">
+            <div className="flex-1 min-w-0">
+              <h1 className="font-display text-2xl sm:text-3xl md:text-5xl lg:text-6xl text-foreground text-shadow-lg mb-2 sm:mb-3 md:mb-4 leading-tight break-words">
                 {movie.title}
               </h1>
 
-              <div className="flex flex-wrap items-center gap-4 mb-4 text-sm">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3 md:gap-4 mb-2 sm:mb-3 md:mb-4 text-xs sm:text-sm">
                 <span className="text-muted-foreground flex items-center gap-1">
-                  <Calendar className="w-4 h-4" />
+                  <Calendar className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
                   {new Date(movie.createdAt).getFullYear()}
                 </span>
                 <Badge variant="secondary" className="text-xs">
@@ -133,31 +133,31 @@ export default function MovieDetailsPage() {
                 </Badge>
               </div>
 
-              <div className="flex flex-wrap gap-2 mb-4">
+              <div className="flex flex-wrap gap-1 sm:gap-2 mb-2 sm:mb-3 md:mb-4">
                 {(typeof movie.genre === 'string' ? movie.genre.split(',').map(g => g.trim()) : movie.genre).map((genre) => (
-                  <Badge key={genre} variant="outline" className="bg-secondary/50">
+                  <Badge key={genre} variant="outline" className="bg-secondary/50 text-xs">
                     {genre}
                   </Badge>
                 ))}
               </div>
 
-              <p className="text-muted-foreground mb-6 leading-relaxed">
+              <p className="text-xs sm:text-sm md:text-base text-muted-foreground mb-3 sm:mb-4 md:mb-6 leading-relaxed line-clamp-3 sm:line-clamp-4">
                 {movie.description}
               </p>
 
-              <div className="flex flex-wrap gap-3">
-                <Link to={`/player/${movie._id}`}>
-                  <Button size="lg" className="btn-cinema font-semibold">
-                    <Play className="w-5 h-5 mr-2 fill-current" />
-                    Play Now
+              <div className="flex flex-wrap gap-2 sm:gap-3 w-full">
+                <Link to={`/player/${movie._id}`} className="flex-1 sm:flex-none">
+                  <Button size="sm" className="btn-cinema font-semibold w-full sm:w-auto h-9 sm:h-11 text-xs sm:text-base">
+                    <Play className="w-3 h-3 sm:w-5 sm:h-5 mr-1 sm:mr-2 fill-current" />
+                    Play
                   </Button>
                 </Link>
-                <Button size="lg" variant="secondary" className="font-semibold">
-                  <Plus className="w-5 h-5 mr-2" />
-                  Add to Playlist
+                <Button size="sm" variant="secondary" className="flex-1 sm:flex-none font-semibold h-9 sm:h-11 text-xs sm:text-base">
+                  <Plus className="w-3 h-3 sm:w-5 sm:h-5 mr-1 sm:mr-2" />
+                  Playlist
                 </Button>
-                <Button size="lg" variant="outline">
-                  <Share2 className="w-5 h-5" />
+                <Button size="sm" variant="outline" className="w-9 h-9 sm:w-auto sm:h-11 px-2 sm:px-3">
+                  <Share2 className="w-3 h-3 sm:w-5 sm:h-5" />
                 </Button>
               </div>
             </div>

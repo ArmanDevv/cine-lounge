@@ -67,37 +67,37 @@ export default function GroupsPage() {
   };
 
   return (
-    <div className="min-h-screen pt-20 pb-12 px-4 md:px-8">
+    <div className="min-h-screen pt-16 sm:pt-20 pb-8 sm:pb-12 px-3 sm:px-4 md:px-6 lg:px-8">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="max-w-6xl mx-auto"
       >
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 mb-6 sm:mb-8">
           <div>
-            <h1 className="font-display text-4xl text-foreground mb-2">Groups</h1>
-            <p className="text-muted-foreground">
+            <h1 className="font-display text-2xl sm:text-3xl md:text-4xl text-foreground mb-1 sm:mb-2">Groups</h1>
+            <p className="text-xs sm:text-sm md:text-base text-muted-foreground">
               Join groups to watch movies together and chat with friends
             </p>
           </div>
 
-          <div className="flex gap-3">
+          <div className="flex gap-2 sm:gap-3 w-full sm:w-auto">
             {/* Join Group */}
             <Dialog open={showJoinModal} onOpenChange={setShowJoinModal}>
               <DialogTrigger asChild>
-                <Button variant="outline">
-                  <LinkIcon className="w-4 h-4 mr-2" />
-                  Join Group
+                <Button variant="outline" size="sm" className="flex-1 sm:flex-none text-xs sm:text-base">
+                  <LinkIcon className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                  Join
                 </Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="w-[calc(100%-2rem)] sm:w-full">
                 <DialogHeader>
-                  <DialogTitle>Join a Group</DialogTitle>
+                  <DialogTitle className="text-base sm:text-lg">Join a Group</DialogTitle>
                 </DialogHeader>
-                <div className="space-y-4 pt-4">
+                <div className="space-y-3 sm:space-y-4 pt-2 sm:pt-4">
                   <div>
-                    <Label>Invite Code</Label>
+                    <Label className="text-xs sm:text-sm">Invite Code</Label>
                     <Input
                       placeholder="Enter invite code"
                       value={inviteCode}

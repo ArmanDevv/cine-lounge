@@ -71,15 +71,15 @@ export default function HomePage() {
 
   if (loading || isLoading) {
     return (
-      <div className="min-h-screen pt-16">
-        <Skeleton className="h-[85vh] w-full" />
-        <div className="px-8 py-8 space-y-8">
+      <div className="min-h-screen pt-16 sm:pt-20">
+        <Skeleton className="h-[50vh] sm:h-[60vh] md:h-[75vh] w-full" />
+        <div className="px-4 sm:px-6 md:px-8 py-6 sm:py-8 space-y-6 sm:space-y-8">
           {[1, 2, 3].map((i) => (
             <div key={i}>
-              <Skeleton className="h-6 w-48 mb-4" />
-              <div className="flex gap-3">
+              <Skeleton className="h-5 sm:h-6 w-32 sm:w-48 mb-3 sm:mb-4" />
+              <div className="flex gap-2 sm:gap-3 overflow-x-auto pb-2">
                 {[1, 2, 3, 4, 5].map((j) => (
-                  <Skeleton key={j} className="w-44 h-64 rounded-lg flex-shrink-0" />
+                  <Skeleton key={j} className="w-24 h-32 sm:w-32 h-44 md:w-40 h-56 rounded-lg flex-shrink-0" />
                 ))}
               </div>
             </div>
