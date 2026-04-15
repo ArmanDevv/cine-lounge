@@ -334,7 +334,7 @@ export default function PlaylistsPage() {
                       </DialogContent>
                     </Dialog>
                   </div>
-                )}}
+                )
               </div>
             ) : (
               <div className="h-full flex items-center justify-center text-center">
