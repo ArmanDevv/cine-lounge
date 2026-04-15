@@ -1,9 +1,7 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Search, 
-  Bell, 
   ChevronDown, 
   Menu, 
   X,
@@ -13,7 +11,6 @@ import {
   Film
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,7 +19,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useAuthStore } from '@/stores/authStore';
-import { useMovieStore } from '@/stores/movieStore';
 
 const navLinks = [
   { href: '/', label: 'Home' },
@@ -34,15 +30,11 @@ const navLinks = [
 
 export function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const searchInputRef = useRef<HTMLInputElement>(null);
   const location = useLocation();
   const navigate = useNavigate();
   
   const { user, logout } = useAuthStore();
-  const { searchMovies, searchResults, clearSearch } = useMovieStore();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -52,22 +44,7 @@ export function Navbar() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  useEffect(() => {
-    if (isSearchOpen && searchInputRef.current) {
-      searchInputRef.current.focus();
-    }
-  }, [isSearchOpen]);
 
-  useEffect(() => {
-    const debounce = setTimeout(() => {
-      if (searchQuery) {
-        searchMovies(searchQuery);
-      } else {
-        clearSearch();
-      }
-    }, 300);
-    return () => clearTimeout(debounce);
-  }, [searchQuery]);
 
   const handleLogout = async () => {
     await logout();
@@ -115,57 +92,14 @@ export function Navbar() {
 
           {/* Right Side */}
           <div className="flex items-center gap-4">
-            {/* Search */}
-            <div className="relative">
-              <AnimatePresence>
-                {isSearchOpen && (
-                  <motion.div
-                    initial={{ width: 0, opacity: 0 }}
-                    animate={{ width: 240, opacity: 1 }}
-                    exit={{ width: 0, opacity: 0 }}
-                    className="absolute right-8 top-1/2 -translate-y-1/2"
-                  >
-                    <Input
-                      ref={searchInputRef}
-                      type="text"
-                      placeholder="Search movies..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="h-9 bg-secondary/50 border-muted-foreground/30 focus:border-primary"
-                    />
-                  </motion.div>
-                )}
-              </AnimatePresence>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => {
-                  setIsSearchOpen(!isSearchOpen);
-                  if (isSearchOpen) {
-                    setSearchQuery('');
-                    clearSearch();
-                  }
-                }}
-              >
-                {isSearchOpen ? <X className="w-5 h-5" /> : <Search className="w-5 h-5" />}
-              </Button>
-            </div>
-
-            {/* Notifications */}
-            <Button variant="ghost" size="icon" className="relative">
-              <Bell className="w-5 h-5" />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full" />
-            </Button>
 
             {/* Profile Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="flex items-center gap-2 px-2">
-                  <img
-                    src={user?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=40'}
-                    alt={user?.username}
-                    className="w-8 h-8 rounded object-cover"
-                  />
+                  <div className="w-8 h-8 rounded bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center">
+                    <User className="w-4 h-4 text-primary-foreground" />
+                  </div>
                   <ChevronDown className="w-4 h-4 text-muted-foreground" />
                 </Button>
               </DropdownMenuTrigger>
@@ -212,42 +146,7 @@ export function Navbar() {
           </div>
         </div>
 
-        {/* Search Results Dropdown */}
-        <AnimatePresence>
-          {searchResults.length > 0 && isSearchOpen && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="absolute top-full right-4 md:right-8 w-80 bg-card border border-border rounded-lg shadow-lg overflow-hidden"
-            >
-              {searchResults.slice(0, 5).map((movie) => (
-                <Link
-                  key={movie.id}
-                  to={`/movies/${movie.id}`}
-                  onClick={() => {
-                    setIsSearchOpen(false);
-                    setSearchQuery('');
-                    clearSearch();
-                  }}
-                  className="flex items-center gap-3 p-3 hover:bg-accent transition-colors"
-                >
-                  <img
-                    src={movie.poster}
-                    alt={movie.title}
-                    className="w-12 h-16 object-cover rounded"
-                  />
-                  <div>
-                    <p className="font-medium text-sm">{movie.title}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {movie.year} • {movie.genre[0]}
-                    </p>
-                  </div>
-                </Link>
-              ))}
-            </motion.div>
-          )}
-        </AnimatePresence>
+
       </motion.nav>
 
       {/* Mobile Menu */}
