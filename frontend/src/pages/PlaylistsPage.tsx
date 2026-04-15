@@ -153,6 +153,7 @@ export default function PlaylistsPage() {
         </div>
 
         {/* Playlists Grid */}
+        {!selectedPlaylist && (
         <div className="mb-12">
           <h2 className="text-xl font-semibold mb-6 text-muted-foreground">Your Collections</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -198,6 +199,7 @@ export default function PlaylistsPage() {
             </div>
           )}
         </div>
+        )}
 
         {/* Playlist Content */}
         {currentPlaylist && (
@@ -206,9 +208,9 @@ export default function PlaylistsPage() {
             animate={{ opacity: 1, y: 0 }}
             className="mt-12 pt-8 border-t border-border/50"
           >
-            <div className="flex items-start justify-between mb-8">
-              <div>
-                <h2 className="text-3xl font-bold mb-2">{currentPlaylist.name}</h2>
+            <div className="flex flex-col gap-4 sm:items-start sm:justify-between mb-8 sm:flex-row">
+              <div className="flex-1">
+                <h2 className="text-2xl sm:text-3xl font-bold mb-2">{currentPlaylist.name}</h2>
                 <p className="text-muted-foreground max-w-2xl">
                   {currentPlaylist.description || 'No description added'}
                 </p>
@@ -217,7 +219,7 @@ export default function PlaylistsPage() {
                   <span className="text-sm text-muted-foreground">Private Collection</span>
                 </div>
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-shrink-0">
                 <Button variant="ghost" size="icon" title="Edit playlist">
                   <Edit2 className="w-4 h-4" />
                 </Button>
@@ -234,7 +236,7 @@ export default function PlaylistsPage() {
 
             {currentPlaylist.movies.length > 0 ? (
               <div>
-                <div className="mb-6 flex items-center justify-between">
+                <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                   <h3 className="text-lg font-semibold">{currentPlaylist.movies.length} movies in this playlist</h3>
                   <Dialog open={showMovieDialog} onOpenChange={setShowMovieDialog}>
                     <DialogTrigger asChild>
