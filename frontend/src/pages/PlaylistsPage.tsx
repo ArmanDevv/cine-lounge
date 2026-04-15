@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, ListVideo, Lock, Trash2, Edit2, Loader2 } from 'lucide-react';
+import { Plus, ListVideo, Lock, Trash2, Edit2, Loader2, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -208,6 +208,16 @@ export default function PlaylistsPage() {
             animate={{ opacity: 1, y: 0 }}
             className="mt-12 pt-8 border-t border-border/50"
           >
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setSelectedPlaylist(null)}
+              className="mb-4 -ml-2"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back
+            </Button>
+
             <div className="flex flex-col gap-4 sm:items-start sm:justify-between mb-8 sm:flex-row">
               <div className="flex-1">
                 <h2 className="text-2xl sm:text-3xl font-bold mb-2">{currentPlaylist.name}</h2>
@@ -337,16 +347,6 @@ export default function PlaylistsPage() {
                 </Dialog>
               </div>
             )}
-
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="mt-8 text-center py-4"
-            >
-              <Button variant="outline" onClick={() => setSelectedPlaylist(null)} className="w-full sm:w-auto">
-                Back to All Playlists
-              </Button>
-            </motion.div>
           </motion.div>
         )}
       </motion.div>
