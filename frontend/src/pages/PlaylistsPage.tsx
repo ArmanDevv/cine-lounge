@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, ListVideo, Globe, Lock, Trash2, Edit2 } from 'lucide-react';
+import { Plus, ListVideo, Lock, Trash2, Edit2, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -12,19 +12,24 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
 import { usePlaylistStore } from '@/stores/playlistStore';
 import { MovieCard } from '@/components/movie/MovieCard';
 import { Link } from 'react-router-dom';
+import { movieService } from '@/services/movieService';
+import { useToast } from '@/hooks/use-toast';
+import { Movie } from '@/types';
 
 export default function PlaylistsPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newPlaylistName, setNewPlaylistName] = useState('');
   const [newPlaylistDescription, setNewPlaylistDescription] = useState('');
-  const [isPublic, setIsPublic] = useState(true);
   const [selectedPlaylist, setSelectedPlaylist] = useState<string | null>(null);
+  const [showMovieDialog, setShowMovieDialog] = useState(false);
+  const [availableMovies, setAvailableMovies] = useState<Movie[]>([]);
+  const [isLoadingMovies, setIsLoadingMovies] = useState(false);
 
   const { playlists, loadPlaylists, createPlaylist, deletePlaylist } = usePlaylistStore();
+  const { toast } = useToast();
   const displayPlaylists = playlists;
   const currentPlaylist = displayPlaylists.find(p => p.id === selectedPlaylist);
 
@@ -34,12 +39,63 @@ export default function PlaylistsPage() {
 
   const handleCreatePlaylist = async () => {
     if (!newPlaylistName.trim()) return;
-    const created = createPlaylist({ name: newPlaylistName.trim(), description: newPlaylistDescription.trim(), isPublic });
+    const created = createPlaylist({ name: newPlaylistName.trim(), description: newPlaylistDescription.trim(), isPublic: false });
     setShowCreateModal(false);
     setNewPlaylistName('');
     setNewPlaylistDescription('');
-    setIsPublic(true);
     setSelectedPlaylist(created.id);
+  };
+
+  const fetchAvailableMovies = async () => {
+    setIsLoadingMovies(true);
+    try {
+      const response = await movieService.getMovies();
+      setAvailableMovies(response.data || []);
+    } catch (err) {
+      toast({
+        title: 'Error',
+        description: 'Failed to load movies',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoadingMovies(false);
+    }
+  };
+
+  const handleAddMovieToPlaylist = async (movieId: string) => {
+    if (!selectedPlaylist) return;
+    try {
+      // Find the playlist and add the movie to it
+      const playlist = playlists.find(p => p.id === selectedPlaylist);
+      if (playlist) {
+        const movie = availableMovies.find(m => m._id === movieId);
+        if (movie && !playlist.movies.some(m => m.id === movieId)) {
+          playlist.movies.push({ id: movieId, poster: movie.thumbnailUrl, title: movie.title });
+          setShowMovieDialog(false);
+          toast({
+            title: 'Success',
+            description: 'Movie added to playlist',
+          });
+        } else if (playlist.movies.some(m => m.id === movieId)) {
+          toast({
+            title: 'Already Added',
+            description: 'This movie is already in the playlist',
+            variant: 'destructive',
+          });
+        }
+      }
+    } catch (err) {
+      toast({
+        title: 'Error',
+        description: 'Failed to add movie to playlist',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleOpenMovieDialog = () => {
+    fetchAvailableMovies();
+    setShowMovieDialog(true);
   };
 
   return (
@@ -88,15 +144,6 @@ export default function PlaylistsPage() {
                     className="mt-2"
                   />
                 </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label>Public Playlist</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Others can view and add to this playlist
-                    </p>
-                  </div>
-                  <Switch checked={isPublic} onCheckedChange={setIsPublic} />
-                </div>
                 <Button onClick={handleCreatePlaylist} className="w-full btn-cinema">
                   Create Playlist
                 </Button>
@@ -139,13 +186,9 @@ export default function PlaylistsPage() {
                       {playlist.movies.length} movies
                     </p>
                     <div className="flex items-center gap-1 mt-1">
-                      {playlist.isPublic ? (
-                        <Globe className="w-3 h-3 text-muted-foreground" />
-                      ) : (
-                        <Lock className="w-3 h-3 text-muted-foreground" />
-                      )}
+                      <Lock className="w-3 h-3 text-muted-foreground" />
                       <span className="text-xs text-muted-foreground">
-                        {playlist.isPublic ? 'Public' : 'Private'}
+                        Private
                       </span>
                     </div>
                     <div className="mt-2 flex gap-2">
@@ -191,10 +234,56 @@ export default function PlaylistsPage() {
                 </div>
 
                 {currentPlaylist.movies.length > 0 ? (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                    {currentPlaylist.movies.map((movie) => (
-                      <MovieCard key={movie.id} movie={movie} size="md" />
-                    ))}
+                  <div>
+                    <div className="mb-4">
+                      <Dialog open={showMovieDialog} onOpenChange={setShowMovieDialog}>
+                        <DialogTrigger asChild>
+                          <Button onClick={handleOpenMovieDialog} className="btn-cinema">
+                            <Plus className="w-4 h-4 mr-2" />
+                            Add Movies
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-h-[80vh] overflow-y-auto">
+                          <DialogHeader>
+                            <DialogTitle>Add Movie to Playlist</DialogTitle>
+                          </DialogHeader>
+                          {isLoadingMovies ? (
+                            <div className="flex items-center justify-center py-8">
+                              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                            </div>
+                          ) : (
+                            <div className="grid grid-cols-2 gap-4">
+                              {availableMovies.map((movie) => (
+                                <div
+                                  key={movie._id}
+                                  className="cursor-pointer group"
+                                  onClick={() => handleAddMovieToPlaylist(movie._id)}
+                                >
+                                  <div className="relative mb-2 overflow-hidden rounded-lg">
+                                    <img
+                                      src={movie.thumbnailUrl || ''}
+                                      alt={movie.title}
+                                      className="w-full h-32 object-cover group-hover:scale-105 transition-transform"
+                                    />
+                                    <div className="absolute inset-0 bg-black/40 group-hover:bg-black/60 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                                      <Plus className="w-6 h-6 text-white" />
+                                    </div>
+                                  </div>
+                                  <h4 className="text-sm font-medium line-clamp-2">
+                                    {movie.title}
+                                  </h4>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </DialogContent>
+                      </Dialog>
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                      {currentPlaylist.movies.map((movie) => (
+                        <MovieCard key={movie.id} movie={movie} size="md" />
+                      ))}
+                    </div>
                   </div>
                 ) : (
                   <div className="text-center py-16 glass-panel rounded-xl">
@@ -202,11 +291,50 @@ export default function PlaylistsPage() {
                     <p className="text-muted-foreground mb-4">
                       This playlist is empty
                     </p>
-                    <Link to="/movies">
-                      <Button>Browse Movies</Button>
-                    </Link>
+                    <Dialog open={showMovieDialog} onOpenChange={setShowMovieDialog}>
+                      <DialogTrigger asChild>
+                        <Button onClick={handleOpenMovieDialog} className="btn-cinema">
+                          <Plus className="w-4 h-4 mr-2" />
+                          Add Movies
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-h-[80vh] overflow-y-auto">
+                        <DialogHeader>
+                          <DialogTitle>Add Movie to Playlist</DialogTitle>
+                        </DialogHeader>
+                        {isLoadingMovies ? (
+                          <div className="flex items-center justify-center py-8">
+                            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-2 gap-4">
+                            {availableMovies.map((movie) => (
+                              <div
+                                key={movie._id}
+                                className="cursor-pointer group"
+                                onClick={() => handleAddMovieToPlaylist(movie._id)}
+                              >
+                                <div className="relative mb-2 overflow-hidden rounded-lg">
+                                  <img
+                                    src={movie.thumbnailUrl || ''}
+                                    alt={movie.title}
+                                    className="w-full h-32 object-cover group-hover:scale-105 transition-transform"
+                                  />
+                                  <div className="absolute inset-0 bg-black/40 group-hover:bg-black/60 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                                    <Plus className="w-6 h-6 text-white" />
+                                  </div>
+                                </div>
+                                <h4 className="text-sm font-medium line-clamp-2">
+                                  {movie.title}
+                                </h4>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </DialogContent>
+                    </Dialog>
                   </div>
-                )}
+                )}}
               </div>
             ) : (
               <div className="h-full flex items-center justify-center text-center">
