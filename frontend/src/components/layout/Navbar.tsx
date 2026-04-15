@@ -91,7 +91,7 @@ export function Navbar() {
             <Link to="/" className="flex items-center gap-2">
               <Film className="w-8 h-8 text-primary" />
               <span className="font-display text-2xl text-foreground tracking-wider hidden sm:block">
-                CINEVERSE
+                DTPlex
               </span>
             </Link>
 

@@ -84,7 +84,7 @@ export default function LoginPage() {
           <Link to="/" className="flex items-center gap-2 mb-6 sm:mb-8">
             <Film className="w-8 sm:w-10 h-8 sm:h-10 text-primary" />
             <span className="font-display text-2xl sm:text-3xl text-foreground tracking-wider">
-              CINEVERSE
+              DTPlex
             </span>
           </Link>
 

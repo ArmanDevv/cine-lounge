@@ -116,7 +116,7 @@ export function Footer() {
         </div>
 
         <div className="border-t border-border mt-8 pt-8 text-center text-sm text-muted-foreground">
-          <p>© {new Date().getFullYear()} CineVerse. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} DTPlex. All rights reserved.</p>
         </div>
       </div>
     </footer>
