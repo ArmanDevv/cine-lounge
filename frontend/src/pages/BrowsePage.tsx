@@ -38,6 +38,7 @@ export default function BrowsePage() {
   const fetchMovies = async () => {
     try {
       setLoading(true);
+
       const response = await api.get<{ data: Movie[] }>('/movies');
       setMovies(response.data.data || []);
     } catch (error) {
@@ -69,6 +70,7 @@ export default function BrowsePage() {
       }
     });
 
+  return (
     <div className="min-h-screen pt-16 sm:pt-20 pb-8 sm:pb-12 px-3 sm:px-4 md:px-6 lg:px-8">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -217,4 +219,5 @@ export default function BrowsePage() {
         )}
       </motion.div>
     </div>
+  );
 }
