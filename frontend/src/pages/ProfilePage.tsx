@@ -2,18 +2,18 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { 
   User, 
-  Camera, 
   Edit2, 
   Save, 
   Clock, 
   Heart, 
   ListVideo,
   Settings,
-  LogOut
+  LogOut,
+  Calendar,
+  Tv
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { MovieCard } from '@/components/movie/MovieCard';
 import { useAuthStore } from '@/stores/authStore';
@@ -28,7 +28,6 @@ export default function ProfilePage() {
   const { user, logout, setUser } = useAuthStore();
   const [isEditing, setIsEditing] = useState(false);
   const [username, setUsername] = useState(user?.username || '');
-  const [bio, setBio] = useState(user?.bio || '');
   const { watchHistory, fetchWatchHistory } = useMovieStore();
   const { playlists: allPlaylists, loadPlaylists } = usePlaylistStore();
   const playlists = allPlaylists.filter(p => p.ownerId === user?.id);
@@ -77,12 +76,12 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="min-h-screen pt-20 pb-12 overflow-x-hidden">
+    <div className="min-h-screen pb-12 overflow-x-hidden">
       {/* Profile Header */}
       <div className="relative">
         {/* Cover Image */}
         <div 
-          className="h-48 md:h-64 bg-cover bg-center"
+          className="h-40 sm:h-48 md:h-64 bg-cover bg-center"
           style={{ 
             backgroundImage: `url(https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=1920)` 
           }}
@@ -91,25 +90,17 @@ export default function ProfilePage() {
         </div>
 
         {/* Profile Info */}
-        <div className="max-w-4xl mx-auto px-4 md:px-8 -mt-20 relative z-10">
+        <div className="max-w-6xl mx-auto px-3 sm:px-4 md:px-8 -mt-16 sm:-mt-20 relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="flex flex-col md:flex-row items-start gap-6"
+            className="flex flex-col sm:flex-row items-start gap-4 sm:gap-6"
           >
             {/* Avatar */}
-            <div className="relative">
-              <img
-                src={user?.avatar}
-                alt={user?.username}
-                className="w-32 h-32 md:w-40 md:h-40 rounded-xl object-cover border-4 border-background shadow-xl"
-              />
-              <Button
-                size="icon"
-                className="absolute bottom-2 right-2 w-8 h-8 rounded-full"
-              >
-                <Camera className="w-4 h-4" />
-              </Button>
+            <div className="relative flex-shrink-0">
+              <div className="w-32 h-32 md:w-40 md:h-40 rounded-xl bg-gradient-to-br from-primary to-primary/70 border-4 border-background shadow-xl flex items-center justify-center">
+                <User className="w-16 h-16 md:w-20 md:h-20 text-primary-foreground" />
+              </div>
             </div>
 
             {/* Info */}
@@ -121,13 +112,6 @@ export default function ProfilePage() {
                     onChange={(e) => setUsername(e.target.value)}
                     className="text-xl font-bold bg-secondary/50"
                     placeholder="Username"
-                  />
-                  <Textarea
-                    value={bio}
-                    onChange={(e) => setBio(e.target.value)}
-                    className="bg-secondary/50"
-                    placeholder="Write something about yourself..."
-                    rows={3}
                   />
                   <div className="flex gap-2">
                     <Button onClick={handleSave}>
@@ -141,7 +125,7 @@ export default function ProfilePage() {
                 </div>
               ) : (
                 <>
-                  <div className="flex items-center gap-4 mb-2">
+                  <div className="flex items-center gap-4 mb-6">
                     <h1 className="text-2xl md:text-3xl font-bold">{user?.username}</h1>
                     <Button
                       variant="ghost"
@@ -157,30 +141,32 @@ export default function ProfilePage() {
                       {user?.subscription && user.subscription.status === 'active' ? 'Manage Subscription' : 'Upgrade'}
                     </Button>
                   </div>
-                  <p className="text-muted-foreground mb-4">
-                    {user?.bio || 'No bio yet. Click edit to add one!'}
-                  </p>
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                    <span>Member since {user?.createdAt}</span>
-                    <span>•</span>
-                    <span className="flex items-center gap-1">
-                      <Clock className="w-4 h-4" />
-                      {watchHistory.length} movies watched
-                    </span>
-                    <span>•</span>
-                    <span className="flex items-center gap-2">
-                      <strong className="text-foreground">Subscription:</strong>
-                      {user?.subscription ? (
-                        <span className="text-sm">
-                          {user.subscription.plan} — {user.subscription.status}{' '}
-                          {user.subscription.expiresAt ? (
-                            <span className="text-muted-foreground">(expires {new Date(user.subscription.expiresAt).toLocaleDateString()})</span>
-                          ) : null}
-                        </span>
-                      ) : (
-                        <span className="text-sm text-muted-foreground">Free</span>
-                      )}
-                    </span>
+                  
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
+                    <div>
+                      <p className="text-muted-foreground mb-1">Member Since</p>
+                      <div className="flex items-center gap-2 text-foreground">
+                        <Calendar className="w-4 h-4" />
+                        {user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <p className="text-muted-foreground mb-1">Movies Watched</p>
+                      <div className="flex items-center gap-2 text-foreground">
+                        <Tv className="w-4 h-4" />
+                        {watchHistory.length}
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <p className="text-muted-foreground mb-1">Subscription</p>
+                      <div className="text-foreground font-medium">
+                        {user?.subscription?.status === 'active' 
+                          ? user.subscription.plan 
+                          : 'Free'}
+                      </div>
+                    </div>
                   </div>
                 </>
               )}
@@ -190,7 +176,7 @@ export default function ProfilePage() {
       </div>
 
       {/* Content Tabs */}
-      <div className="max-w-4xl mx-auto px-4 md:px-8 mt-8">
+      <div className="max-w-6xl mx-auto px-3 sm:px-4 md:px-8 mt-8">
         <Tabs defaultValue="history">
           <TabsList className="w-full justify-start mb-6 bg-secondary/30">
             <TabsTrigger value="history" className="flex items-center gap-2">
