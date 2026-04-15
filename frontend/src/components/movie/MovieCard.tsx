@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Play, Plus, Star, Clock } from 'lucide-react';
+import { Play, Star, Clock } from 'lucide-react';
 import { Movie } from '@/types';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -34,37 +34,26 @@ export function MovieCard({ movie, size = 'md', showProgress }: MovieCardProps) 
         {/* Gradient Overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
-        {/* Hover Content */}
-        <div className="absolute inset-0 flex flex-col justify-end p-2 sm:p-3 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
-          <h3 className="font-semibold text-foreground text-xs sm:text-sm line-clamp-2 text-shadow mb-1">
+        {/* Title - Always Visible */}
+        <div className="absolute bottom-0 left-0 right-0 p-2 sm:p-3 bg-gradient-to-t from-background to-background/20">
+          <h3 className="font-semibold text-foreground text-xs sm:text-sm line-clamp-2">
             {movie.title}
           </h3>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <span className="line-clamp-1">{movie.genre}</span>
-          </div>
-          
-          {/* Quick Actions */}
-          <div className="flex gap-1 mt-1 sm:mt-2">
-            <Button
-              size="sm"
-              className="flex-1 h-6 sm:h-7 text-xs bg-primary hover:bg-primary/90"
-              onClick={(e) => {
-                e.preventDefault();
-                window.location.href = `/player/${movie._id}`;
-              }}
-            >
-              <Play className="w-2 h-2 sm:w-3 sm:h-3 mr-1" />
-              Play
-            </Button>
-            <Button
-              size="sm"
-              variant="secondary"
-              className="h-6 sm:h-7 w-6 sm:w-7 p-0"
-              onClick={(e) => e.preventDefault()}
-            >
-              <Plus className="w-2 h-2 sm:w-3 sm:h-3" />
-            </Button>
-          </div>
+        </div>
+
+        {/* Hover Content - Play Button */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
+          <Button
+            size="sm"
+            className="h-10 sm:h-12 px-4 sm:px-6 text-xs sm:text-sm bg-primary hover:bg-primary/90"
+            onClick={(e) => {
+              e.preventDefault();
+              window.location.href = `/player/${movie._id}`;
+            }}
+          >
+            <Play className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+            Play
+          </Button>
         </div>
 
         {/* Rating Badge */}
