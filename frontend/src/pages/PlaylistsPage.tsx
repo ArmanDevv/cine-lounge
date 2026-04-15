@@ -168,18 +168,8 @@ export default function PlaylistsPage() {
                 }`}
                 onClick={() => setSelectedPlaylist(playlist.id)}
               >
-                <div className="relative w-full h-32 rounded-lg overflow-hidden mb-3 flex-shrink-0">
-                  {playlist.movies[0] ? (
-                    <img
-                      src={playlist.movies[0].poster}
-                      alt={playlist.name}
-                      className="w-full h-full object-cover hover:scale-105 transition-transform"
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-muted/50 flex items-center justify-center">
-                      <ListVideo className="w-8 h-8 text-muted-foreground" />
-                    </div>
-                  )}
+                <div className="w-full h-24 rounded-lg overflow-hidden mb-3 flex-shrink-0 bg-gradient-to-br from-red-600 to-red-700 flex items-center justify-center">
+                  <ListVideo className="w-12 h-12 text-white/80" />
                 </div>
                 <h3 className="font-semibold truncate mb-1">{playlist.name}</h3>
                 <p className="text-xs text-muted-foreground mb-2">
