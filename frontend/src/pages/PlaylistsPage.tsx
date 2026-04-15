@@ -69,14 +69,14 @@ export default function PlaylistsPage() {
       const playlist = playlists.find(p => p.id === selectedPlaylist);
       if (playlist) {
         const movie = availableMovies.find(m => m._id === movieId);
-        if (movie && !playlist.movies.some(m => m.id === movieId)) {
-          playlist.movies.push({ id: movieId, poster: movie.thumbnailUrl, title: movie.title });
+        if (movie && !playlist.movies.some((m: any) => m._id === movieId)) {
+          playlist.movies.push(movie as any);
           setShowMovieDialog(false);
           toast({
             title: 'Success',
             description: 'Movie added to playlist',
           });
-        } else if (playlist.movies.some(m => m.id === movieId)) {
+        } else if (playlist.movies.some((m: any) => m._id === movieId)) {
           toast({
             title: 'Already Added',
             description: 'This movie is already in the playlist',
