@@ -193,6 +193,7 @@ export default function MovieDetailsPage() {
         )}
 
         {/* Comments Section */}
+        {/* 
         <section className="mb-12">
           <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
             <MessageSquare className="w-5 h-5" />
@@ -200,7 +201,7 @@ export default function MovieDetailsPage() {
           </h2>
 
           {/* Add Comment */}
-          <div className="glass-panel rounded-xl p-4 mb-6">
+          {/* <div className="glass-panel rounded-xl p-4 mb-6">
             <div className="flex gap-3 mb-3">
               {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((rating) => (
                 <button
@@ -226,7 +227,7 @@ export default function MovieDetailsPage() {
           </div>
 
           {/* Comments List */}
-          <div className="space-y-4">
+          {/* <div className="space-y-4">
             {comments.map((comment) => (
               <div key={comment.id} className="glass-panel rounded-xl p-4">
                 <div className="flex items-start gap-3">
@@ -257,6 +258,7 @@ export default function MovieDetailsPage() {
             ))}
           </div>
         </section>
+        */}
 
         {/* Recommended Movies */}
         <section>
