@@ -4,11 +4,11 @@ import { Film, Twitter, Instagram, Youtube, Facebook } from 'lucide-react';
 export function Footer() {
   return (
     <footer className="bg-card border-t border-border mt-16">
-      <div className="max-w-7xl mx-auto px-4 md:px-8 py-12">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+      <div className="max-w-7xl mx-auto px-4 md:px-8 py-12 flex justify-center">
+        <div className="flex flex-col items-center text-center max-w-sm">
           {/* Brand */}
-          <div className="col-span-2 md:col-span-1">
-            <Link to="/" className="flex items-center gap-2 mb-4">
+          <div>
+            <Link to="/" className="flex items-center justify-center gap-2 mb-4">
               <Film className="w-8 h-8 text-primary" />
               <span className="font-display text-xl text-foreground tracking-wider">
                 DTPLEX
@@ -17,7 +17,7 @@ export function Footer() {
             <p className="text-sm text-muted-foreground mb-4">
               Your premium destination for movies, social viewing, and endless entertainment.
             </p>
-            <div className="flex gap-4">
+            <div className="flex gap-4 justify-center">
               <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">
                 <Twitter className="w-5 h-5" />
               </a>
@@ -34,7 +34,7 @@ export function Footer() {
           </div>
 
           {/* Browse */}
-          <div>
+          {/* <div>
             <h4 className="font-semibold text-foreground mb-4">Browse</h4>
             <ul className="space-y-2">
               <li>
@@ -63,10 +63,10 @@ export function Footer() {
                 </Link>
               </li>
             </ul>
-          </div>
+          </div> */}
 
           {/* Community */}
-          <div>
+          {/* <div>
             <h4 className="font-semibold text-foreground mb-4">Community</h4>
             <ul className="space-y-2">
               <li>
@@ -85,10 +85,10 @@ export function Footer() {
                 </Link>
               </li>
             </ul>
-          </div>
+          </div> */}
 
           {/* Legal */}
-          <div>
+          {/* <div>
             <h4 className="font-semibold text-foreground mb-4">Legal</h4>
             <ul className="space-y-2">
               <li>
@@ -112,7 +112,7 @@ export function Footer() {
                 </a>
               </li>
             </ul>
-          </div>
+          </div> */}
         </div>
 
         <div className="border-t border-border mt-8 pt-8 text-center text-sm text-muted-foreground">
