@@ -5,7 +5,7 @@ import { Footer } from './Footer';
 import { motion } from 'framer-motion';
 
 // Pages that should show sidebar
-const sidebarPages = ['/groups', '/admin', '/watch-party'];
+const sidebarPages = ['/groups', '/watch-party'];
 
 export function MainLayout() {
   const location = useLocation();
