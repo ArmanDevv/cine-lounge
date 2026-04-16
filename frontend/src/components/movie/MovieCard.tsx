@@ -11,9 +11,9 @@ interface MovieCardProps {
 }
 
 const sizeClasses = {
-  sm: 'w-28 h-40 sm:w-32 h-48 md:w-36 h-52',
-  md: 'w-36 h-52 sm:w-44 h-64 md:w-48 h-72',
-  lg: 'w-44 h-64 sm:w-52 h-72 md:w-60 h-80',
+  sm: 'w-32 h-44 sm:w-36 h-52 md:w-40 h-56',
+  md: 'w-40 h-56 sm:w-48 h-68 md:w-52 h-80',
+  lg: 'w-48 h-68 sm:w-56 h-80 md:w-64 h-88',
 };
 
 export function MovieCard({ movie, size = 'md', showProgress }: MovieCardProps) {
