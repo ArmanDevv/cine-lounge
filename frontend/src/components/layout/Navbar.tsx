@@ -25,7 +25,7 @@ const navLinks = [
   { href: '/movies', label: 'Movies' },
   { href: '/pricing', label: 'Pricing' },
   { href: '/playlists', label: 'My Playlists' },
-  { href: '/groups', label: 'Groups' },
+  // { href: '/groups', label: 'Groups' },
 ];
 
 export function Navbar() {
