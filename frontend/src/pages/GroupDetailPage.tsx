@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, Suspense, lazy } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
@@ -33,7 +33,10 @@ import { movieService } from '@/services/movieService';
 import { Group } from '@/services/groupService';
 import { Movie } from '@/types';
 import WatchPartyModal from '@/components/WatchPartyModal';
-import WatchPartyPlayer from '@/components/WatchPartyPlayer';
+import WatchPartyPlayerLoader from '@/components/WatchPartyPlayerLoader';
+
+// Lazy load WatchPartyPlayer to defer Agora SDK loading
+const WatchPartyPlayer = lazy(() => import('@/components/WatchPartyPlayer'));
 
 
 export default function GroupDetailPage() {
@@ -697,10 +700,12 @@ export default function GroupDetailPage() {
 
       {/* Watch Party Player */}
       {showWatchPartyPlayer && (
-        <WatchPartyPlayer
-          groupId={id || ''}
-          onClose={() => setShowWatchPartyPlayer(false)}
-        />
+        <Suspense fallback={<WatchPartyPlayerLoader />}>
+          <WatchPartyPlayer
+            groupId={id || ''}
+            onClose={() => setShowWatchPartyPlayer(false)}
+          />
+        </Suspense>
       )}
     </div>
   );

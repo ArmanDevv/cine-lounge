@@ -9,6 +9,10 @@ import AgoraRTC, {
 import { Mic, MicOff, Video, VideoOff, LogOut } from 'lucide-react';
 import { groupService } from '@/services/groupService';
 
+// Disable Agora SDK logging
+AgoraRTC.setLogLevel(0); // 0 = NONE, 1 = DEBUG, 2 = INFO, 3 = WARNING, 4 = ERROR
+AgoraRTC.disableLogUpload();
+
 interface ParticipantVideo {
   userId: string;
   videoTrack?: IRemoteVideoTrack;
