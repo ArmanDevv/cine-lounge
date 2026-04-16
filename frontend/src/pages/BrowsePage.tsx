@@ -162,13 +162,14 @@ export default function BrowsePage() {
 
         {/* Movies Grid */}
         {viewMode === 'grid' ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-3 md:gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
             {filteredMovies.map((movie, index) => (
               <motion.div
                 key={movie._id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
+                className="flex justify-center"
               >
                 <MovieCard movie={movie} size="md" />
               </motion.div>
