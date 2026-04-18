@@ -97,7 +97,9 @@ export default function SeriesUploadForm({ onClose, genres }: Props) {
       description: '',
       videoUrl: '',
       thumbnailUrl: '',
-    });
+      videoMode: 'url' as 'url' | 'file',
+      thumbnailMode: 'url' as 'url' | 'file',
+    } as any);
     setSeasons(newSeasons);
   };
 
@@ -169,12 +171,23 @@ export default function SeriesUploadForm({ onClose, genres }: Props) {
         return;
       }
       for (const episode of season.episodes) {
-        if (!(episode as any).videoFile && !episode.videoUrl) {
-          toast({ title: 'Missing video', description: `S${season.seasonNumber}E${episode.episodeNumber}: Please provide video URL or file`, variant: 'destructive' });
+        const videoMode = (episode as any).videoMode || 'url';
+        const thumbnailMode = (episode as any).thumbnailMode || 'url';
+
+        if (videoMode === 'url' && !episode.videoUrl) {
+          toast({ title: 'Missing video', description: `S${season.seasonNumber}E${episode.episodeNumber}: Please provide video URL`, variant: 'destructive' });
           return;
         }
-        if (!(episode as any).thumbnailFile && !episode.thumbnailUrl) {
-          toast({ title: 'Missing thumbnail', description: `S${season.seasonNumber}E${episode.episodeNumber}: Please provide thumbnail URL or file`, variant: 'destructive' });
+        if (videoMode === 'file' && !(episode as any).videoFile) {
+          toast({ title: 'Missing video', description: `S${season.seasonNumber}E${episode.episodeNumber}: Please select video file`, variant: 'destructive' });
+          return;
+        }
+        if (thumbnailMode === 'url' && !episode.thumbnailUrl) {
+          toast({ title: 'Missing thumbnail', description: `S${season.seasonNumber}E${episode.episodeNumber}: Please provide thumbnail URL`, variant: 'destructive' });
+          return;
+        }
+        if (thumbnailMode === 'file' && !(episode as any).thumbnailFile) {
+          toast({ title: 'Missing thumbnail', description: `S${season.seasonNumber}E${episode.episodeNumber}: Please select thumbnail file`, variant: 'destructive' });
           return;
         }
       }
@@ -383,14 +396,28 @@ export default function SeriesUploadForm({ onClose, genres }: Props) {
                         <div>
                           <Label className="text-xs">Video</Label>
                           <div className="flex gap-2 mt-1 mb-2">
-                            <Button variant={!(episode as any).videoFile ? 'default' : 'outline'} size="sm" onClick={() => updateEpisode(seasonIdx, epIdx, 'videoMode', 'url')}>
+                            <Button 
+                              variant={(episode as any).videoMode === 'url' ? 'default' : 'outline'} 
+                              size="sm" 
+                              onClick={() => {
+                                updateEpisode(seasonIdx, epIdx, 'videoMode', 'url');
+                                updateEpisode(seasonIdx, epIdx, 'videoFile', null);
+                              }}
+                            >
                               URL
                             </Button>
-                            <Button variant={(episode as any).videoFile ? 'default' : 'outline'} size="sm" onClick={() => updateEpisode(seasonIdx, epIdx, 'videoMode', 'file')}>
+                            <Button 
+                              variant={(episode as any).videoMode === 'file' ? 'default' : 'outline'} 
+                              size="sm" 
+                              onClick={() => {
+                                updateEpisode(seasonIdx, epIdx, 'videoMode', 'file');
+                                updateEpisode(seasonIdx, epIdx, 'videoUrl', '');
+                              }}
+                            >
                               File
                             </Button>
                           </div>
-                          {!(episode as any).videoFile ? (
+                          {(episode as any).videoMode === 'url' ? (
                             <Input value={episode.videoUrl} onChange={(e) => updateEpisode(seasonIdx, epIdx, 'videoUrl', e.target.value)} placeholder="Video URL" />
                           ) : (
                             <>
@@ -403,14 +430,28 @@ export default function SeriesUploadForm({ onClose, genres }: Props) {
                         <div>
                           <Label className="text-xs">Thumbnail</Label>
                           <div className="flex gap-2 mt-1 mb-2">
-                            <Button variant={!(episode as any).thumbnailFile ? 'default' : 'outline'} size="sm" onClick={() => updateEpisode(seasonIdx, epIdx, 'thumbMode', 'url')}>
+                            <Button 
+                              variant={(episode as any).thumbnailMode === 'url' ? 'default' : 'outline'} 
+                              size="sm" 
+                              onClick={() => {
+                                updateEpisode(seasonIdx, epIdx, 'thumbnailMode', 'url');
+                                updateEpisode(seasonIdx, epIdx, 'thumbnailFile', null);
+                              }}
+                            >
                               URL
                             </Button>
-                            <Button variant={(episode as any).thumbnailFile ? 'default' : 'outline'} size="sm" onClick={() => updateEpisode(seasonIdx, epIdx, 'thumbMode', 'file')}>
+                            <Button 
+                              variant={(episode as any).thumbnailMode === 'file' ? 'default' : 'outline'} 
+                              size="sm" 
+                              onClick={() => {
+                                updateEpisode(seasonIdx, epIdx, 'thumbnailMode', 'file');
+                                updateEpisode(seasonIdx, epIdx, 'thumbnailUrl', '');
+                              }}
+                            >
                               File
                             </Button>
                           </div>
-                          {!(episode as any).thumbnailFile ? (
+                          {(episode as any).thumbnailMode === 'url' ? (
                             <Input value={episode.thumbnailUrl} onChange={(e) => updateEpisode(seasonIdx, epIdx, 'thumbnailUrl', e.target.value)} placeholder="Thumbnail URL" />
                           ) : (
                             <>
