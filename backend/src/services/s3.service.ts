@@ -20,13 +20,22 @@ const s3Client = new S3Client({
 const ALLOWED_VIDEO_MIME = ['video/mp4', 'video/quicktime', 'video/x-matroska'];
 const ALLOWED_IMAGE_MIME = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 
+// Sanitize filename to avoid CloudFront/S3 issues with special characters
+function sanitizeFileName(fileName: string): string {
+  return fileName
+    .replace(/[^a-zA-Z0-9._-]/g, '-') // Replace special chars with dash
+    .replace(/-+/g, '-') // Replace multiple dashes with single dash
+    .toLowerCase();
+}
+
 export async function generatePresignedUploadUrl(originalFileName: string, fileType: string) {
   if (!ALLOWED_VIDEO_MIME.includes(fileType)) {
     throw new Error('Invalid file type');
   }
 
   const id = uuidv4();
-  const fileKey = `movies/${id}-${originalFileName}`;
+  const sanitizedFileName = sanitizeFileName(originalFileName);
+  const fileKey = `movies/${id}-${sanitizedFileName}`;
 
   const putCommand = new PutObjectCommand({
     Bucket: BUCKET,
@@ -59,7 +68,8 @@ export async function generatePresignedThumbnailUploadUrl(originalFileName: stri
   }
 
   const id = uuidv4();
-  const fileKey = `thumbnails/${id}-${originalFileName}`;
+  const sanitizedFileName = sanitizeFileName(originalFileName);
+  const fileKey = `thumbnails/${id}-${sanitizedFileName}`;
 
   const putCommand = new PutObjectCommand({
     Bucket: BUCKET,
