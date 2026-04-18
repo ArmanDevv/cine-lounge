@@ -46,16 +46,13 @@ export async function generatePresignedUploadUrl(originalFileName: string, fileT
   // Expires in 5 minutes (300 seconds)
   const uploadUrl = await getSignedUrl(s3Client, putCommand, { expiresIn: 300 });
 
-  const cloudfrontBase = process.env.CLOUDFRONT_URL || '';
-  let videoUrl: string;
-  
-  if (cloudfrontBase) {
-    // Ensure CloudFront URL has https:// prefix
-    const cfUrl = cloudfrontBase.startsWith('http') ? cloudfrontBase : `https://${cloudfrontBase}`;
-    videoUrl = `${cfUrl}/${fileKey}`;
-  } else {
-    videoUrl = `https://${BUCKET}.s3.${REGION}.amazonaws.com/${fileKey}`;
-  }
+  // Generate presigned GET URL for playback (1 hour expiration)
+  const getCommand = new GetObjectCommand({
+    Bucket: BUCKET,
+    Key: fileKey,
+  });
+
+  const videoUrl = await getSignedUrl(s3Client, getCommand, { expiresIn: 3600 });
 
   console.log('Generated videoUrl:', videoUrl);
 
@@ -80,16 +77,13 @@ export async function generatePresignedThumbnailUploadUrl(originalFileName: stri
   // Expires in 5 minutes (300 seconds)
   const uploadUrl = await getSignedUrl(s3Client, putCommand, { expiresIn: 300 });
 
-  const cloudfrontBase = process.env.CLOUDFRONT_URL || '';
-  let thumbnailUrl: string;
-  
-  if (cloudfrontBase) {
-    // Ensure CloudFront URL has https:// prefix
-    const cfUrl = cloudfrontBase.startsWith('http') ? cloudfrontBase : `https://${cloudfrontBase}`;
-    thumbnailUrl = `${cfUrl}/${fileKey}`;
-  } else {
-    thumbnailUrl = `https://${BUCKET}.s3.${REGION}.amazonaws.com/${fileKey}`;
-  }
+  // Generate presigned GET URL for display (1 hour expiration)
+  const getCommand = new GetObjectCommand({
+    Bucket: BUCKET,
+    Key: fileKey,
+  });
+
+  const thumbnailUrl = await getSignedUrl(s3Client, getCommand, { expiresIn: 3600 });
 
   console.log('Generated thumbnailUrl:', thumbnailUrl);
 
