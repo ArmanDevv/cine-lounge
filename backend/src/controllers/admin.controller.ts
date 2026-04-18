@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import * as s3Service from '../services/s3.service';
 import Movie from '../models/Movie';
 
-// Generate presigned upload URL - only for admins
+// Generate presigned upload URL for videos - only for admins
 export const generateUploadUrl = async (req: Request, res: Response) => {
   try {
     const { fileName, fileType } = req.body;
@@ -21,6 +21,28 @@ export const generateUploadUrl = async (req: Request, res: Response) => {
     }
     console.error('generateUploadUrl error:', error);
     return res.status(500).json({ message: 'Could not generate upload URL' });
+  }
+};
+
+// Generate presigned upload URL for thumbnails - only for admins
+export const generateThumbnailUploadUrl = async (req: Request, res: Response) => {
+  try {
+    const { fileName, fileType } = req.body;
+
+    if (!fileName || !fileType) {
+      return res.status(400).json({ message: 'fileName and fileType are required' });
+    }
+
+    // Validate file type in service
+    const result = await s3Service.generatePresignedThumbnailUploadUrl(fileName, fileType);
+
+    return res.json(result);
+  } catch (error: any) {
+    if (error.message === 'Invalid image file type') {
+      return res.status(400).json({ message: 'Invalid image file type. Allowed: JPEG, PNG, WebP, GIF' });
+    }
+    console.error('generateThumbnailUploadUrl error:', error);
+    return res.status(500).json({ message: 'Could not generate thumbnail upload URL' });
   }
 };
 
@@ -113,4 +135,4 @@ export const deleteMovie = async (req: Request, res: Response) => {
   }
 };
 
-export default { generateUploadUrl, createMovie, getAllMovies, updateMovie, deleteMovie };
+export default { generateUploadUrl, generateThumbnailUploadUrl, createMovie, getAllMovies, updateMovie, deleteMovie };

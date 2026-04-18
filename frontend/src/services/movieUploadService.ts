@@ -7,8 +7,22 @@ export interface UploadUrlResponse {
   videoUrl: string;
 }
 
+export interface ThumbnailUploadUrlResponse {
+  uploadUrl: string;
+  fileKey: string;
+  thumbnailUrl: string;
+}
+
 export async function requestUploadUrl(file: File): Promise<UploadUrlResponse> {
   const response = await api.post<UploadUrlResponse>('/admin/generate-upload-url', {
+    fileName: file.name,
+    fileType: file.type,
+  });
+  return response.data;
+}
+
+export async function requestThumbnailUploadUrl(file: File): Promise<ThumbnailUploadUrlResponse> {
+  const response = await api.post<ThumbnailUploadUrlResponse>('/admin/generate-thumbnail-upload-url', {
     fileName: file.name,
     fileType: file.type,
   });
@@ -28,9 +42,22 @@ export async function uploadVideoToS3(uploadUrl: string, file: File, onProgress?
   });
 }
 
+export async function uploadThumbnailToS3(uploadUrl: string, file: File, onProgress?: (percent: number) => void) {
+  await axios.put(uploadUrl, file, {
+    headers: {
+      'Content-Type': file.type,
+    },
+    onUploadProgress: (progressEvent) => {
+      if (!progressEvent.total) return;
+      const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+      if (onProgress) onProgress(percent);
+    },
+  });
+}
+
 export async function saveMovieMetadata(movieData: any) {
   const response = await api.post('/admin/movies', movieData);
   return response.data;
 }
 
-export default { requestUploadUrl, uploadVideoToS3, saveMovieMetadata };
+export default { requestUploadUrl, requestThumbnailUploadUrl, uploadVideoToS3, uploadThumbnailToS3, saveMovieMetadata };

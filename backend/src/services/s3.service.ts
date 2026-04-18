@@ -17,10 +17,11 @@ const s3Client = new S3Client({
   },
 });
 
-const ALLOWED_MIME = ['video/mp4', 'video/quicktime', 'video/x-matroska'];
+const ALLOWED_VIDEO_MIME = ['video/mp4', 'video/quicktime', 'video/x-matroska'];
+const ALLOWED_IMAGE_MIME = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 
 export async function generatePresignedUploadUrl(originalFileName: string, fileType: string) {
-  if (!ALLOWED_MIME.includes(fileType)) {
+  if (!ALLOWED_VIDEO_MIME.includes(fileType)) {
     throw new Error('Invalid file type');
   }
 
@@ -50,6 +51,39 @@ export async function generatePresignedUploadUrl(originalFileName: string, fileT
   console.log('Generated videoUrl:', videoUrl);
 
   return { uploadUrl, fileKey, videoUrl };
+}
+
+export async function generatePresignedThumbnailUploadUrl(originalFileName: string, fileType: string) {
+  if (!ALLOWED_IMAGE_MIME.includes(fileType)) {
+    throw new Error('Invalid image file type');
+  }
+
+  const id = uuidv4();
+  const fileKey = `thumbnails/${id}-${originalFileName}`;
+
+  const putCommand = new PutObjectCommand({
+    Bucket: BUCKET,
+    Key: fileKey,
+    ContentType: fileType,
+  });
+
+  // Expires in 5 minutes (300 seconds)
+  const uploadUrl = await getSignedUrl(s3Client, putCommand, { expiresIn: 300 });
+
+  const cloudfrontBase = process.env.CLOUDFRONT_URL || '';
+  let thumbnailUrl: string;
+  
+  if (cloudfrontBase) {
+    // Ensure CloudFront URL has https:// prefix
+    const cfUrl = cloudfrontBase.startsWith('http') ? cloudfrontBase : `https://${cloudfrontBase}`;
+    thumbnailUrl = `${cfUrl}/${fileKey}`;
+  } else {
+    thumbnailUrl = `https://${BUCKET}.s3.${REGION}.amazonaws.com/${fileKey}`;
+  }
+
+  console.log('Generated thumbnailUrl:', thumbnailUrl);
+
+  return { uploadUrl, fileKey, thumbnailUrl };
 }
 
 export async function generatePresignedReadUrl(fileKey: string, expiresIn: number = 3600) {
@@ -110,4 +144,4 @@ function extractFileKeyFromUrl(videoUrl: string): string | null {
   }
 }
 
-export default { generatePresignedUploadUrl, generatePresignedReadUrl, deleteFileFromS3 };
+export default { generatePresignedUploadUrl, generatePresignedThumbnailUploadUrl, generatePresignedReadUrl, deleteFileFromS3 };

@@ -4,8 +4,11 @@ import { authenticate, requireAdmin } from '../middleware/auth';
 
 const router = express.Router();
 
-// Generate presigned URL
+// Generate presigned URL for video
 router.post('/generate-upload-url', authenticate, requireAdmin, adminController.generateUploadUrl);
+
+// Generate presigned URL for thumbnail
+router.post('/generate-thumbnail-upload-url', authenticate, requireAdmin, adminController.generateThumbnailUploadUrl);
 
 // Get all movies
 router.get('/movies', adminController.getAllMovies);
