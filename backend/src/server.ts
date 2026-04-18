@@ -10,6 +10,7 @@ import { Server as SocketIOServer } from 'socket.io';
 import authRoutes from './routes/auth';
 import adminRoutes from './routes/admin.routes';
 import moviesRoutes from './routes/movies.routes';
+import seriesRoutes from './routes/series.routes';
 import groupRoutes from './routes/group.routes';
 import subscriptionsRoutes from './routes/subscriptions';
 import Group from './models/Group';
@@ -43,6 +44,7 @@ app.use((req, res, next) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/movies', moviesRoutes);
+app.use('/api/series', seriesRoutes);
 app.use('/api/groups', groupRoutes);
 app.use('/api/subscriptions', subscriptionsRoutes);
 

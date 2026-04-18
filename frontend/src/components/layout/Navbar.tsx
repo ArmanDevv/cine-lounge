@@ -23,6 +23,7 @@ import { useAuthStore } from '@/stores/authStore';
 const navLinks = [
   { href: '/', label: 'Home' },
   { href: '/movies', label: 'Movies' },
+  { href: '/series', label: 'Web Series' },
   { href: '/pricing', label: 'Pricing' },
   { href: '/playlists', label: 'My Playlists' },
   // { href: '/groups', label: 'Groups' },

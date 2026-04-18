@@ -7,7 +7,8 @@ import {
   Plus,
   ArrowUpRight,
   ArrowDownRight,
-  Loader
+  Loader,
+  Tv
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -116,12 +117,20 @@ export default function AdminDashboard() {
               Overview of your platform's performance
             </p>
           </div>
-          <Link to="/admin/movies">
-            <Button className="btn-cinema text-xs sm:text-base h-9 sm:h-10 w-full sm:w-auto">
-              <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-              Add Movie
-            </Button>
-          </Link>
+          <div className="flex gap-2 flex-col sm:flex-row w-full sm:w-auto">
+            <Link to="/admin/movies" className="flex-1 sm:flex-none">
+              <Button className="btn-cinema text-xs sm:text-base h-9 sm:h-10 w-full">
+                <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                Add Movie
+              </Button>
+            </Link>
+            <Link to="/admin/series" className="flex-1 sm:flex-none">
+              <Button className="btn-cinema text-xs sm:text-base h-9 sm:h-10 w-full">
+                <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                Add Series
+              </Button>
+            </Link>
+          </div>
         </div>
 
         {/* Stats Cards */}

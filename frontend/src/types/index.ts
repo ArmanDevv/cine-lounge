@@ -165,3 +165,41 @@ export interface MovieFilters {
   search?: string;
   sortBy?: 'trending' | 'newest' | 'popular' | 'rating';
 }
+
+// Web Series types
+export interface Episode {
+  episodeNumber: number;
+  title: string;
+  description: string;
+  videoUrl: string;
+  thumbnailUrl: string;
+  duration?: number; // in minutes
+}
+
+export interface Season {
+  seasonNumber: number;
+  title: string;
+  description: string;
+  episodes: Episode[];
+}
+
+export interface Series {
+  _id?: string;
+  id?: string;
+  title: string;
+  description: string;
+  genre: string;
+  thumbnailUrl: string;
+  seasons: Season[];
+  uploadedBy?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface SeriesWatchProgress {
+  seriesId: string;
+  seasonNumber: number;
+  episodeNumber: number;
+  progress: number; // percentage
+  lastWatched: string;
+}
