@@ -14,6 +14,7 @@ import BrowsePage from "./pages/BrowsePage";
 import MovieDetailsPage from "./pages/MovieDetailsPage";
 import WebSeriesPage from "./pages/WebSeriesPage";
 import SeriesDetailsPage from "./pages/SeriesDetailsPage";
+import SeriesPlayerPage from "./pages/SeriesPlayerPage";
 import PlayerPage from "./pages/PlayerPage";
 import ProfilePage from "./pages/ProfilePage";
 import GroupsPage from "./pages/GroupsPage";
@@ -43,6 +44,7 @@ const App = () => (
           
           {/* Player - Full Screen */}
           <Route path="/player/:id" element={<PlayerPage />} />
+          <Route path="/series/:seriesId/player/:seasonNumber/:episodeNumber" element={<SeriesPlayerPage />} />
           
           {/* Main App with Layout */}
           <Route element={<MainLayout />}>
