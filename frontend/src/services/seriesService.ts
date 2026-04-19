@@ -82,6 +82,46 @@ export async function uploadToS3(uploadUrl: string, file: File, onProgress?: (pe
   });
 }
 
+// Extract S3 file key from presigned URL
+export function extractFileKeyFromUrl(url: string): string {
+  try {
+    const urlObj = new URL(url);
+    // Path format: /bucket/movies/filename or /bucket/thumbnails/filename
+    // We need to remove the bucket name and get the rest
+    const pathname = urlObj.pathname;
+    const parts = pathname.split('/').filter(p => p); // Remove empty parts
+    
+    // parts[0] is bucket name, rest is the key
+    if (parts.length > 1) {
+      return parts.slice(1).join('/');
+    }
+    return '';
+  } catch (e) {
+    console.error('Failed to extract file key from URL:', e);
+    return '';
+  }
+}
+
+// Generate fresh presigned playback URL (works even after original expires)
+export async function generateFreshPlaybackUrl(presignedUrl: string): Promise<string> {
+  const fileKey = extractFileKeyFromUrl(presignedUrl);
+  
+  if (!fileKey) {
+    console.warn('Could not extract file key from URL, returning original:', presignedUrl);
+    return presignedUrl;
+  }
+
+  try {
+    const response = await api.post<{ playbackUrl: string }>('/admin/generate-playback-url', {
+      fileKey,
+    });
+    return response.data.playbackUrl;
+  } catch (error) {
+    console.error('Failed to generate fresh playback URL, using original:', error);
+    return presignedUrl; // Fallback to original URL
+  }
+}
+
 export default {
   getAllSeries,
   getSeriesById,
@@ -91,4 +131,6 @@ export default {
   requestThumbnailUploadUrl,
   requestVideoUploadUrl,
   uploadToS3,
+  extractFileKeyFromUrl,
+  generateFreshPlaybackUrl,
 };

@@ -135,4 +135,22 @@ export const deleteMovie = async (req: Request, res: Response) => {
   }
 };
 
-export default { generateUploadUrl, generateThumbnailUploadUrl, createMovie, getAllMovies, updateMovie, deleteMovie };
+// Generate fresh presigned playback URL for video playback (works even after original expires)
+export const generatePlaybackUrl = async (req: Request, res: Response) => {
+  try {
+    const { fileKey } = req.body;
+
+    if (!fileKey) {
+      return res.status(400).json({ message: 'fileKey is required' });
+    }
+
+    const playbackUrl = await s3Service.generatePresignedReadUrl(fileKey);
+
+    return res.json({ playbackUrl });
+  } catch (error) {
+    console.error('generatePlaybackUrl error:', error);
+    return res.status(500).json({ message: 'Could not generate playback URL' });
+  }
+};
+
+export default { generateUploadUrl, generateThumbnailUploadUrl, createMovie, getAllMovies, updateMovie, deleteMovie, generatePlaybackUrl };

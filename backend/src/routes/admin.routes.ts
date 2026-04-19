@@ -10,6 +10,9 @@ router.post('/generate-upload-url', authenticate, requireAdmin, adminController.
 // Generate presigned URL for thumbnail
 router.post('/generate-thumbnail-upload-url', authenticate, requireAdmin, adminController.generateThumbnailUploadUrl);
 
+// Generate fresh presigned playback URL (for expired presigned URLs)
+router.post('/generate-playback-url', authenticate, requireAdmin, adminController.generatePlaybackUrl);
+
 // Get all movies
 router.get('/movies', adminController.getAllMovies);
 

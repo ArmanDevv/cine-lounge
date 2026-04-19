@@ -17,6 +17,7 @@ export default function SeriesPlayerPage() {
   const [series, setSeries] = useState<Series | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [freshVideoUrl, setFreshVideoUrl] = useState<string | null>(null);
 
   const seasonNumber = seasonStr ? parseInt(seasonStr) : 1;
   const episodeNumber = episodeStr ? parseInt(episodeStr) : 1;
@@ -26,6 +27,22 @@ export default function SeriesPlayerPage() {
       fetchSeries();
     }
   }, [seriesId]);
+
+  // Generate fresh presigned URL whenever episode changes
+  useEffect(() => {
+    const currentEpisode = getCurrentEpisodeSync();
+    if (currentEpisode?.videoUrl) {
+      seriesService.generateFreshPlaybackUrl(currentEpisode.videoUrl)
+        .then(url => {
+          console.log('Fresh video URL generated:', url);
+          setFreshVideoUrl(url);
+        })
+        .catch(err => {
+          console.error('Failed to generate fresh URL:', err);
+          setFreshVideoUrl(currentEpisode.videoUrl); // Fallback to stored URL
+        });
+    }
+  }, [seasonNumber, episodeNumber, series]);
 
   const fetchSeries = async () => {
     try {
@@ -41,13 +58,17 @@ export default function SeriesPlayerPage() {
     }
   };
 
-  const getCurrentEpisode = () => {
+  // Helper function to get current episode without causing issues in useEffect
+  const getCurrentEpisodeSync = () => {
     if (!series) return null;
     const season = series.seasons?.find(s => s.seasonNumber === seasonNumber);
     if (!season) return null;
     const episode = season.episodes.find(e => e.episodeNumber === episodeNumber);
     return episode;
   };
+
+  const getCurrentEpisode = () => {
+    return getCurrentEpisodeSync();
 
   const goToNextEpisode = () => {
     if (!series) return;
@@ -160,8 +181,8 @@ export default function SeriesPlayerPage() {
       {/* Video Player Container */}
       <div className="flex-1 flex items-center justify-center bg-black w-full">
         <video
-          key={`${currentEpisode.videoUrl}`}
-          src={currentEpisode.videoUrl}
+          key={`${freshVideoUrl || currentEpisode.videoUrl}`}
+          src={freshVideoUrl || currentEpisode.videoUrl}
           controls
           autoPlay
           crossOrigin="anonymous"
@@ -174,7 +195,7 @@ export default function SeriesPlayerPage() {
           onEnded={goToNextEpisode}
           onError={(e) => {
             console.error('Video playback error:', e);
-            console.error('Video URL:', currentEpisode.videoUrl);
+            console.error('Video URL:', freshVideoUrl || currentEpisode.videoUrl);
           }}
         />
       </div>
