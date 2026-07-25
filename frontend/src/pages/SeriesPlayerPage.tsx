@@ -69,6 +69,7 @@ export default function SeriesPlayerPage() {
 
   const getCurrentEpisode = () => {
     return getCurrentEpisodeSync();
+  };
 
   const goToNextEpisode = () => {
     if (!series) return;
