@@ -82,20 +82,18 @@ export async function uploadToS3(uploadUrl: string, file: File, onProgress?: (pe
   });
 }
 
-// Extract S3 file key from presigned URL
 export function extractFileKeyFromUrl(url: string): string {
   try {
     const urlObj = new URL(url);
-    // Path format: /bucket/movies/filename or /bucket/thumbnails/filename
-    // We need to remove the bucket name and get the rest
-    const pathname = urlObj.pathname;
-    const parts = pathname.split('/').filter(p => p); // Remove empty parts
-    
-    // parts[0] is bucket name, rest is the key
-    if (parts.length > 1) {
+    const parts = urlObj.pathname.split('/').filter(Boolean);
+
+    // Path-style S3 URLs include the bucket as the first path segment.
+    if (urlObj.hostname.startsWith('s3.') && parts.length > 1) {
       return parts.slice(1).join('/');
     }
-    return '';
+
+    // Virtual-hosted S3 and CloudFront URLs put the object key in the path.
+    return parts.join('/');
   } catch (e) {
     console.error('Failed to extract file key from URL:', e);
     return '';
