@@ -4,6 +4,11 @@ import * as s3Service from '../services/s3.service';
 
 const router = express.Router();
 
+function extractMovieFileKey(videoUrl: string): string {
+  const { pathname } = new URL(videoUrl);
+  return pathname.split('/').filter(Boolean).slice(-2).join('/');
+}
+
 // Get all movies - public endpoint
 router.get('/', async (req, res) => {
   try {
@@ -23,9 +28,7 @@ router.get('/', async (req, res) => {
       movies.map(async (movie) => {
         const movieObj = movie.toObject();
         try {
-          // Extract fileKey from videoUrl
-          const urlParts = movie.videoUrl.split('/');
-          const fileKey = urlParts.slice(-2).join('/');
+          const fileKey = extractMovieFileKey(movie.videoUrl);
           
           // Generate presigned URL (1 hour expiry)
           const presignedUrl = await s3Service.generatePresignedReadUrl(fileKey, 3600);
@@ -61,9 +64,7 @@ router.get('/:id', async (req, res) => {
     
     const movieObj = movie.toObject();
     try {
-      // Extract fileKey from videoUrl
-      const urlParts = movie.videoUrl.split('/');
-      const fileKey = urlParts.slice(-2).join('/');
+      const fileKey = extractMovieFileKey(movie.videoUrl);
       
       // Generate presigned URL (1 hour expiry)
       const presignedUrl = await s3Service.generatePresignedReadUrl(fileKey, 3600);
